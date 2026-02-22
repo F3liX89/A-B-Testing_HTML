@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Bayesian A/B Test</title>
-<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<script src="plotly.min.js"></script>
 <style>
 body {
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
@@ -113,7 +113,7 @@ function normalSample() {
 }
 
 function runTest() {
-    const samples = 50000;
+    const samples = 500000;
     const variants = [];
 
     for(let i=1; i<=variantCount; i++) {
