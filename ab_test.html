@@ -2,259 +2,277 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Bayesian A/B Testing Enterprise Dashboard</title>
-<script src="plotly.min.js"></script>
+<title>Bayesian A/B Testing Dashboard</title>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 
 <style>
-body {
-    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    background: #f4f6f9;
-    margin: 40px;
-    color: #2c3e50;
+:root {
+    --bg-light: linear-gradient(135deg,#e9f1ff,#f7faff);
+    --bg-dark: linear-gradient(135deg,#1c1c1e,#2c2c2e);
+    --text-light:#1d1d1f;
+    --text-dark:#f5f5f7;
 }
-h1 { margin-bottom: 30px; }
 
-.card {
-    background: white;
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
-    margin-bottom: 25px;
+body {
+    font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+    margin:0;
+    padding:60px;
+    transition:all 0.4s ease;
+}
+
+body.light {
+    background:var(--bg-light);
+    color:var(--text-light);
+}
+
+body.dark {
+    background:var(--bg-dark);
+    color:var(--text-dark);
+}
+
+.glass {
+    background:rgba(255,255,255,0.55);
+    backdrop-filter:blur(30px);
+    -webkit-backdrop-filter:blur(30px);
+    border-radius:26px;
+    padding:35px;
+    margin-bottom:40px;
+    box-shadow:0 8px 40px rgba(0,0,0,0.12);
+    transition:all 0.4s ease;
+}
+
+body.dark .glass {
+    background:rgba(50,50,55,0.45);
+}
+
+h1 {
+    font-weight:600;
+    margin-bottom:50px;
 }
 
 .variant-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
+    display:flex;
+    align-items:center;
+    gap:15px;
+    margin-bottom:16px;
 }
 
 .variant-label {
-    width: 120px;
-    font-weight: 600;
+    width:120px;
+    font-weight:500;
 }
 
 input {
-    padding: 6px;
-    width: 110px;
+    padding:9px;
+    border-radius:14px;
+    border:none;
+    background:rgba(255,255,255,0.7);
+    width:110px;
+}
+
+body.dark input {
+    background:rgba(80,80,85,0.6);
+    color:white;
 }
 
 button {
-    background: #0052cc;
-    color: white;
-    border: none;
-    padding: 10px 18px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 500;
+    background:linear-gradient(135deg,#007aff,#0056d6);
+    border:none;
+    color:white;
+    padding:12px 22px;
+    border-radius:18px;
+    cursor:pointer;
+    transition:all 0.25s ease;
 }
 
-button:hover { background: #003f9e; }
-
-.remove-btn {
-    background: #d9534f;
+button:hover {
+    transform:translateY(-2px);
+    box-shadow:0 8px 20px rgba(0,122,255,0.4);
 }
-.remove-btn:hover { background: #b52b27; }
+
+.toggle {
+    position:absolute;
+    top:30px;
+    right:40px;
+}
 
 .kpi-box {
-    padding: 15px;
-    border-radius: 8px;
-    margin-top: 15px;
-    font-weight: 600;
+    padding:28px;
+    border-radius:26px;
+    font-size:18px;
 }
 
-.success { background: #d4edda; color: #155724; }
-.warning { background: #fff3cd; color: #856404; }
-.danger  { background: #f8d7da; color: #721c24; }
+.success {background:rgba(52,199,89,0.15);}
+.warning {background:rgba(255,204,0,0.2);}
+.danger {background:rgba(255,59,48,0.15);}
 
+.ci-entry {
+    margin-bottom:14px;
+    font-size:17px;
+}
+
+.small-text {
+    font-size:14px;
+    opacity:0.7;
+    margin-top:15px;
+}
 </style>
 </head>
 
-<body>
+<body class="light">
+
+<button class="toggle" onclick="toggleMode()">🌗 Dark Mode</button>
 
 <h1>Bayesian A/B Testing Dashboard</h1>
 
-<div class="card">
+<div class="glass">
 <h3>Varianten</h3>
 <div id="variants"></div>
 <button onclick="addVariant()">+ Variante hinzufügen</button>
+
+<details style="margin-top:25px;">
+    <summary style="cursor:pointer;font-weight:500;">Advanced Settings</summary>
+    <div style="margin-top:15px;">
+        Prior α: <input type="number" id="priorA" value="1">
+        Prior β: <input type="number" id="priorB" value="1">
+        Entscheidungsgrenze (%): <input type="number" id="threshold" value="95">
+    </div>
+</details>
 </div>
 
-<div class="card">
+<div class="glass">
 <button onclick="runTest()">Analyse starten</button>
 </div>
 
 <div id="results"></div>
 
 <script>
+let variantCounter=0;
 
-let variantCounter = 0;
-
-function initializeVariants() {
-    addVariant(true);   // Control
-    addVariant(false);  // Variante 1
+function toggleMode(){
+    document.body.classList.toggle("dark");
+    document.body.classList.toggle("light");
 }
 
-function addVariant(isControl=false) {
+function initializeVariants(){
+    addVariant(true);
+    addVariant(false);
+}
 
+function addVariant(isControl=false){
     variantCounter++;
-    const container = document.getElementById("variants");
-
-    const row = document.createElement("div");
-    row.className = "variant-row";
-    row.dataset.index = variantCounter;
-
-    const label = isControl ? "Control" : `Variante ${variantCounter-1}`;
-
-    row.innerHTML = `
+    const row=document.createElement("div");
+    row.className="variant-row";
+    const label=isControl?"Control":`Variante ${variantCounter-1}`;
+    row.innerHTML=`
         <span class="variant-label">${label}</span>
-        Besucher:
-        <input type="number" value="1000">
-        Conversions:
-        <input type="number" value="100">
-        ${!isControl ? `<button class="remove-btn" onclick="this.parentElement.remove()">X</button>` : ""}
+        Besucher:<input type="number" value="1000">
+        Conversions:<input type="number" value="100">
+        ${!isControl?`<button onclick="this.parentElement.remove()">X</button>`:""}
     `;
-
-    container.appendChild(row);
+    document.getElementById("variants").appendChild(row);
 }
 
-function normalSample() {
-    let u=0,v=0;
-    while(u===0) u=Math.random();
-    while(v===0) v=Math.random();
-    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
-}
+function normalSample(){let u=0,v=0;while(u===0)u=Math.random();while(v===0)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function gammaSample(s){const d=s-1/3;const c=1/Math.sqrt(9*d);while(true){let x=normalSample();let v=Math.pow(1+c*x,3);if(v>0){let u=Math.random();if(u<1-0.0331*Math.pow(x,4)||Math.log(u)<0.5*x*x+d*(1-v+Math.log(v))){return d*v;}}}}
+function betaSample(a,b){const x = gammaSample(a);const y = gammaSample(b);return x/(x+y);}
 
-function gammaSample(shape) {
-    const d = shape - 1/3;
-    const c = 1 / Math.sqrt(9*d);
-    while(true){
-        let x = normalSample();
-        let v = Math.pow(1+c*x,3);
-        if(v>0){
-            let u=Math.random();
-            if(u<1-0.0331*Math.pow(x,4) ||
-               Math.log(u)<0.5*x*x + d*(1-v+Math.log(v))){
-                return d*v;
-            }
-        }
-    }
-}
-
-function betaSample(a,b){
-    const x = gammaSample(a);
-    const y = gammaSample(b);
-    return x/(x+y);
-}
-
-function percentile(arr,p){
-    const sorted=[...arr].sort((a,b)=>a-b);
-    const idx=Math.floor(p*sorted.length);
-    return sorted[idx];
-}
+function percentile(arr,p){const sorted=[...arr].sort((a,b)=>a-b);return sorted[Math.floor(p*sorted.length)];}
 
 function runTest(){
+    const priorA = parseFloat(document.getElementById("priorA").value);
+    const priorB = parseFloat(document.getElementById("priorB").value);
+    const threshold=parseFloat(document.getElementById("threshold").value)/100;
+    const samples=5000;
 
-    const samples=50000;
     const rows=document.querySelectorAll(".variant-row");
     const variants=[];
-
     rows.forEach((row,i)=>{
         const inputs=row.querySelectorAll("input");
         const n=parseInt(inputs[0].value);
         const c=parseInt(inputs[1].value);
-
         variants.push({
-            label: i===0 ? "Control" : `Variante ${i}`,
-            alpha:1+c,
-            beta:1+n-c
+            label:i===0?"Control":`Variante ${i}`,
+            alpha:priorA+c,
+            beta:priorB+n-c
         });
     });
 
-    const posteriors=variants.map(v=>
-        Array.from({length:samples},()=>betaSample(v.alpha,v.beta))
-    );
-
+    const posteriors=variants.map(v=>Array.from({length:samples},()=>betaSample(v.alpha,v.beta)));
     const bestCounts=Array(variants.length).fill(0);
 
     for(let i=0;i<samples;i++){
         const vals=posteriors.map(p=>p[i]);
-        const maxVal=Math.max(...vals);
-        bestCounts[vals.indexOf(maxVal)]++;
+        bestCounts[vals.indexOf(Math.max(...vals))]++;
     }
 
     const probs=bestCounts.map(c=>c/samples);
-
-    renderResults(variants,posteriors,probs);
+    renderResults(variants,posteriors,probs,threshold);
 }
 
-function renderResults(variants,posteriors,probs){
+function renderResults(variants,posteriors,probs,threshold){
 
     const results=document.getElementById("results");
     results.innerHTML="";
 
-    const traces=posteriors.map((p,i)=>({
-        x:p.map(v=>v*100),
-        type:"histogram",
-        opacity:0.5,
-        name:variants[i].label,
-        histnorm:"probability density"
-    }));
+    const distBox=document.createElement("div");
+    distBox.className="glass";
+    results.appendChild(distBox);
 
-    const distDiv=document.createElement("div");
-    results.appendChild(distDiv);
+    Plotly.newPlot(distBox,
+        posteriors.map((p,i)=>({
+            x:p.map(v=>v*100),
+            type:"histogram",
+            opacity:0.5,
+            name:variants[i].label,
+            histnorm:"probability density"
+        })),
+        {barmode:"overlay",title:"Posterior-Verteilungen (%)"}
+    );
 
-    Plotly.newPlot(distDiv,traces,{
-        barmode:"overlay",
-        title:"Posterior-Verteilungen (%)"
-    });
+    const winBox=document.createElement("div");
+    winBox.className="glass";
+    results.appendChild(winBox);
 
-    const winnerDiv=document.createElement("div");
-    results.appendChild(winnerDiv);
-
-    Plotly.newPlot(winnerDiv,[{
+    Plotly.newPlot(winBox,[{
         x:probs.map(p=>p*100),
         y:variants.map(v=>v.label),
         type:"bar",
         orientation:"h"
-    }],{
-        title:"Wahrscheinlichkeit, Sieger zu sein (%)",
-        xaxis:{range:[0,100]}
-    });
+    }],
+    {title:"Wahrscheinlichkeit, Sieger zu sein (%)",xaxis:{range:[0,100]}});
 
-    // Credible Intervals
+    const ciBox=document.createElement("div");
+    ciBox.className="glass";
+    ciBox.innerHTML="<h3>95%-Credible Intervals</h3>";
     variants.forEach((v,i)=>{
-        const lower=percentile(posteriors[i],0.025)*100;
-        const upper=percentile(posteriors[i],0.975)*100;
-
-        const ci=document.createElement("div");
-        ci.innerHTML=`${v.label}: 95%-CI = [${lower.toFixed(2)}%, ${upper.toFixed(2)}%]`;
-        results.appendChild(ci);
+        const lower=(percentile(posteriors[i],0.025)*100).toFixed(2);
+        const upper=(percentile(posteriors[i],0.975)*100).toFixed(2);
+        ciBox.innerHTML+=`<div class="ci-entry"><strong>${v.label}</strong>: ${lower}% – ${upper}%</div>`;
     });
+    ciBox.innerHTML+=`<div class="small-text">Das 95%-Credible-Intervall gibt den Bereich an, in dem die wahre Conversion Rate mit 95% Wahrscheinlichkeit liegt.</div>`;
+    results.appendChild(ciBox);
 
-    // Entscheidung
+    const decision=document.createElement("div");
+    decision.className="glass kpi-box";
     const maxProb=Math.max(...probs);
     const winnerIndex=probs.indexOf(maxProb);
 
-    const decision=document.createElement("div");
-    decision.className="kpi-box";
-
-    if(maxProb>0.95){
+    if(maxProb>threshold){
         decision.classList.add("success");
-        decision.innerHTML=`Empfehlung: ${variants[winnerIndex].label} gewinnt mit ${(maxProb*100).toFixed(1)}% Wahrscheinlichkeit. Test kann beendet werden.`;
+        decision.innerHTML=`Empfehlung: <strong>${variants[winnerIndex].label}</strong> gewinnt mit ${(maxProb*100).toFixed(1)}% Wahrscheinlichkeit.`;
     } else if(maxProb>0.75){
         decision.classList.add("warning");
-        decision.innerHTML=`Zwischenergebnis: ${variants[winnerIndex].label} führt mit ${(maxProb*100).toFixed(1)}%. Weitere Daten empfohlen.`;
+        decision.innerHTML=`Zwischenergebnis: ${variants[winnerIndex].label} führt mit ${(maxProb*100).toFixed(1)}%.`;
     } else {
         decision.classList.add("danger");
-        decision.innerHTML="Kein klarer Gewinner. Test weiterlaufen lassen.";
+        decision.innerHTML="Kein klarer Gewinner.";
     }
 
     results.appendChild(decision);
 }
 
 initializeVariants();
-
 </script>
 
 </body>
