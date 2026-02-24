@@ -198,7 +198,13 @@ function runTest(){
         });
     });
 
-    const posteriors=variants.map(v=>Array.from({length:samples},()=>betaSample(v.alpha,v.beta)));
+    const posteriors = variants.map(v => {
+        const arr = new Float32Array(samples);
+        for(let i=0;i<samples;i++){
+            arr[i] = betaSample(v.alpha,v.beta);
+        }
+        return arr;
+        });
     const bestCounts=Array(variants.length).fill(0);
 
     for(let i=0;i<samples;i++){
