@@ -76,7 +76,7 @@ body.dark input {
 }
 
 button {
-    background:linear-gradient(135deg,#007aff,#0056d6);
+    background:linear-gradient(135deg,#050505,#050505);
     border:none;
     color:white;
     padding:12px 22px;
@@ -87,7 +87,7 @@ button {
 
 button:hover {
     transform:translateY(-2px);
-    box-shadow:0 8px 20px rgba(0,122,255,0.4);
+    box-shadow:0 8px 20px rgba(97, 98, 100, 0.4);
 }
 
 .toggle {
@@ -367,7 +367,7 @@ results.appendChild(baselineBox);
         decision.style.background="rgba(52,199,89,0.12)";
     }
     else{
-        headline="Noch kein statistisch signifikanter Gewinner";
+        headline="Noch kein klarer Gewinner über der Entscheidungsgrenze";
         subtext=`Aktuell führt ${variants[winnerIndex].label} mit ${(maxProb*100).toFixed(1)}%.`;
             decision.style.background="rgba(255,204,0,0.15)";
     }
