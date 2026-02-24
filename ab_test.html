@@ -255,13 +255,28 @@ function renderResults(variants,posteriors,probs,threshold){
 
     const ciBox=document.createElement("div");
     ciBox.className="glass";
-    ciBox.innerHTML="<h3>95%-Credible Intervals</h3>";
-    variants.forEach((v,i)=>{
-        const lower=(percentile(posteriors[i],0.025)*100).toFixed(2);
-        const upper=(percentile(posteriors[i],0.975)*100).toFixed(2);
-        ciBox.innerHTML+=`<div class="ci-entry"><strong>${v.label}</strong>: ${lower}% – ${upper}%</div>`;
-    });
-    ciBox.innerHTML+=`<div class="small-text">Das 95%-Credible-Intervall gibt den Bereich an, in dem die wahre Conversion Rate mit 95% Wahrscheinlichkeit liegt.</div>`;
+    ciBox.innerHTML="<h3>Credible Intervals (95%)</h3>";
+
+        variants.forEach((v,i)=>{
+            const lower=(percentile(posteriors[i],0.025)*100).toFixed(2);
+            const upper=(percentile(posteriors[i],0.975)*100).toFixed(2);
+            const mean=(percentile(posteriors[i],0.5)*100).toFixed(2);
+
+            ciBox.innerHTML+=`
+            <div class="ci-entry">
+                <strong>${v.label}</strong><br>
+                Median: ${mean}%<br>
+                Intervall: ${lower}% – ${upper}%
+            </div>`;
+        });
+
+    ciBox.innerHTML+=`
+    <div class="small-text">
+    Das Credible Interval beschreibt den Bereich, in dem die tatsächliche Conversion Rate mit 95% posteriorer Wahrscheinlichkeit liegt. 
+    Im Gegensatz zum Frequentistischen Konfidenzintervall ist dies eine direkte Wahrscheinlichkeitsaussage über den Parameter.
+    </div>
+    `;
+
     results.appendChild(ciBox);
 
     const decision=document.createElement("div");
