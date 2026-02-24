@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Bayesian A/B Testing Dashboard</title>
-<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<script defer src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 
 <style>
 :root {
@@ -218,6 +218,11 @@ function renderResults(variants,posteriors,probs,threshold){
     const distBox=document.createElement("div");
     distBox.className="glass";
     results.appendChild(distBox);
+
+    if (typeof Plotly === "undefined") {
+    alert("Plotly konnte nicht geladen werden.");
+    return;
+    }
 
     Plotly.newPlot(distBox,
         posteriors.map((p,i)=>({
