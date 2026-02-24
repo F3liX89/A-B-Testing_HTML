@@ -216,6 +216,32 @@ function runTest(){
     renderResults(variants,posteriors,probs,threshold);
 }
 
+function kernelDensityEstimator(sample, bandwidth = 0.5) {
+    const points = 200;
+    const min = Math.min(...sample);
+    const max = Math.max(...sample);
+    const step = (max - min) / points;
+
+    const xs = [];
+    const ys = [];
+
+    for (let i = 0; i <= points; i++) {
+        const x = min + i * step;
+        xs.push(x);
+
+        let sum = 0;
+        for (let j = 0; j < sample.length; j++) {
+            const u = (x - sample[j]) / bandwidth;
+            sum += Math.exp(-0.5 * u * u);
+        }
+
+        ys.push(sum / (sample.length * bandwidth * Math.sqrt(2 * Math.PI)));
+    }
+
+    return { xs, ys };
+}
+
+
 function renderResults(variants,posteriors,probs,threshold){
 
     const results=document.getElementById("results");
@@ -230,16 +256,28 @@ function renderResults(variants,posteriors,probs,threshold){
     return;
     }
 
-    Plotly.newPlot(distBox,
-        posteriors.map((p,i)=>({
-            x:p.map(v=>v*100),
-            type:"histogram",
-            opacity:0.5,
-            name:variants[i].label,
-            histnorm:"probability density"
-        })),
-        {barmode:"overlay",title:"Posterior-Verteilungen (%)"}
-    );
+    const densityTraces = posteriors.map((p,i)=>{
+        const samplePercent = p.map(v=>v*100);
+        const density = kernelDensityEstimator(samplePercent, 0.4);
+
+        return {
+            x: density.xs,
+            y: density.ys,
+            mode: "lines",
+            name: variants[i].label,
+            line: { width: 3 },
+            fill: "tozeroy",
+            opacity: 0.4
+        };
+    });
+
+Plotly.newPlot(distBox, densityTraces, {
+    title: "Posterior Density Curves",
+    paper_bgcolor: "rgba(0,0,0,0)",
+    plot_bgcolor: "rgba(0,0,0,0)",
+    xaxis: { title: "Conversion Rate (%)" },
+    yaxis: { title: "Density" }
+});
 
     const winBox=document.createElement("div");
     winBox.className="glass";
@@ -252,6 +290,41 @@ function renderResults(variants,posteriors,probs,threshold){
         orientation:"h"
     }],
     {title:"Wahrscheinlichkeit, Sieger zu sein (%)",xaxis:{range:[0,100]}});
+
+
+    const baselineBox = document.createElement("div");
+    baselineBox.className = "glass";
+    baselineBox.innerHTML = "<h3>Probability to Beat Baseline</h3>";
+
+    const controlPosterior = posteriors[0];
+
+    for (let i = 1; i < posteriors.length; i++) {
+
+        let betterCount = 0;
+
+        for (let j = 0; j < controlPosterior.length; j++) {
+            if (posteriors[i][j] > controlPosterior[j]) {
+                betterCount++;
+            }
+        }
+
+        const probability = (betterCount / controlPosterior.length * 100).toFixed(2);
+
+        baselineBox.innerHTML += `
+            <div class="ci-entry">
+                <strong>${variants[i].label}</strong>: ${probability}% Wahrscheinlichkeit besser als Control
+            </div>
+        `;
+    }
+
+    baselineBox.innerHTML += `
+        <div class="small-text">
+        Gibt die posterior Wahrscheinlichkeit an, dass die jeweilige Variante eine höhere Conversion Rate
+        als die Control-Variante besitzt.
+        </div>
+    `;
+
+results.appendChild(baselineBox);
 
     const ciBox=document.createElement("div");
     ciBox.className="glass";
@@ -281,22 +354,31 @@ function renderResults(variants,posteriors,probs,threshold){
 
     const decision=document.createElement("div");
     decision.className="glass kpi-box";
+
     const maxProb=Math.max(...probs);
     const winnerIndex=probs.indexOf(maxProb);
 
+    let headline="";
+    let subtext="";
+
     if(maxProb>threshold){
-        decision.classList.add("success");
-        decision.innerHTML=`Empfehlung: <strong>${variants[winnerIndex].label}</strong> gewinnt mit ${(maxProb*100).toFixed(1)}% Wahrscheinlichkeit.`;
-    } else if(maxProb>0.75){
-        decision.classList.add("warning");
-        decision.innerHTML=`Zwischenergebnis: ${variants[winnerIndex].label} führt mit ${(maxProb*100).toFixed(1)}%.`;
-    } else {
-        decision.classList.add("danger");
-        decision.innerHTML="Kein klarer Gewinner.";
+        headline=`${variants[winnerIndex].label} ist klarer Gewinner`;
+        subtext=`Mit ${(maxProb*100).toFixed(1)}% Wahrscheinlichkeit über der Entscheidungsgrenze von ${(threshold*100).toFixed(0)}%.`;
+        decision.style.background="rgba(52,199,89,0.12)";
+    }
+    else{
+        headline="Noch kein statistisch signifikanter Gewinner";
+        subtext=`Aktuell führt ${variants[winnerIndex].label} mit ${(maxProb*100).toFixed(1)}%.`;
+            decision.style.background="rgba(255,204,0,0.15)";
     }
 
-    results.appendChild(decision);
-}
+    decision.innerHTML=`
+    <h2 style="margin:0 0 10px 0;font-weight:600;">${headline}</h2>
+    <div style="opacity:0.7;font-size:16px;">${subtext}</div>
+    `;
+
+    results.appendChild(decision);  
+    }
 
 initializeVariants();
 </script>
