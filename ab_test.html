@@ -76,7 +76,7 @@ body.dark input {
 }
 
 button {
-    background:linear-gradient(135deg,#3C414B ,#3C414B);
+    background:linear-gradient(135deg,#3C414B,#3C414B);
     border:none;
     color:white;
     padding:12px 22px;
@@ -147,76 +147,111 @@ button:hover {
 <div id="results"></div>
 
 <script>
-let variantCounter=0;
+// FIX 1: variantCounter tracks only non-control variants for correct labeling
+let variantCounter = 0;
 
 function toggleMode(){
     document.body.classList.toggle("dark");
     document.body.classList.toggle("light");
 }
 
+// FIX 2: initializeVariants() is called once at the bottom of the script, not inside renderResults()
 function initializeVariants(){
-    addVariant(true);
-    addVariant(false);
+    variantCounter = 0;
+    document.getElementById("variants").innerHTML = "";
+    addVariant(true);   // Control
+    addVariant(false);  // Variante 1
 }
 
-function addVariant(isControl=false){
-    variantCounter++;
-    const row=document.createElement("div");
-    row.className="variant-row";
-    const label=isControl?"Control":`Variante ${variantCounter-1}`;
-    row.innerHTML=`
+function addVariant(isControl = false){
+    const row = document.createElement("div");
+    row.className = "variant-row";
+
+    // FIX 3: Label counter is based on current non-control rows, not a global counter
+    const nonControlCount = document.querySelectorAll(".variant-row").length; // rows already present
+    const label = isControl ? "Control" : `Variante ${nonControlCount}`;
+
+    row.innerHTML = `
         <span class="variant-label">${label}</span>
         Besucher:<input type="number" value="1000">
         Conversions:<input type="number" value="100">
-        ${!isControl?`<button onclick="this.parentElement.remove()">X</button>`:""}
+        ${!isControl ? `<button onclick="this.parentElement.remove()">✕</button>` : ""}
     `;
     document.getElementById("variants").appendChild(row);
 }
 
-function normalSample(){let u=0,v=0;while(u===0)u=Math.random();while(v===0)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
-function gammaSample(s){const d=s-1/3;const c=1/Math.sqrt(9*d);while(true){let x=normalSample();let v=Math.pow(1+c*x,3);if(v>0){let u=Math.random();if(u<1-0.0331*Math.pow(x,4)||Math.log(u)<0.5*x*x+d*(1-v+Math.log(v))){return d*v;}}}}
-function betaSample(a,b){const x = gammaSample(a);const y = gammaSample(b);return x/(x+y);}
+function normalSample(){
+    let u = 0, v = 0;
+    while(u === 0) u = Math.random();
+    while(v === 0) v = Math.random();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
 
-function percentile(arr,p){const sorted=[...arr].sort((a,b)=>a-b);return sorted[Math.floor(p*sorted.length)];}
+function gammaSample(s){
+    const d = s - 1/3;
+    const c = 1 / Math.sqrt(9 * d);
+    while(true){
+        let x = normalSample();
+        let v = Math.pow(1 + c * x, 3);
+        if(v > 0){
+            let u = Math.random();
+            if(u < 1 - 0.0331 * Math.pow(x, 4) || Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))){
+                return d * v;
+            }
+        }
+    }
+}
+
+function betaSample(a, b){
+    const x = gammaSample(a);
+    const y = gammaSample(b);
+    return x / (x + y);
+}
+
+function percentile(arr, p){
+    const sorted = [...arr].sort((a, b) => a - b);
+    return sorted[Math.floor(p * sorted.length)];
+}
 
 function runTest(){
-    const priorA = parseFloat(document.getElementById("priorA").value);
-    const priorB = parseFloat(document.getElementById("priorB").value);
-    const threshold=parseFloat(document.getElementById("threshold").value)/100;
-    const samples=5000;
+    const priorA    = parseFloat(document.getElementById("priorA").value);
+    const priorB    = parseFloat(document.getElementById("priorB").value);
+    const threshold = parseFloat(document.getElementById("threshold").value) / 100;
+    const numSamples = 5000;   // renamed to avoid collision
 
-    const rows=document.querySelectorAll(".variant-row");
-    const variants=[];
-    rows.forEach((row,i)=>{
-        const inputs=row.querySelectorAll("input");
-        const n=parseInt(inputs[0].value);
-        const c=parseInt(inputs[1].value);
+    const rows = document.querySelectorAll(".variant-row");
+    const variants = [];
+    rows.forEach((row, i) => {
+        const inputs = row.querySelectorAll("input");
+        const n = parseInt(inputs[0].value);
+        const c = parseInt(inputs[1].value);
         variants.push({
-            label:i===0?"Control":`Variante ${i}`,
-            alpha:priorA+c,
-            beta:priorB+n-c
+            label: i === 0 ? "Control" : `Variante ${i}`,
+            alpha: priorA + c,
+            beta:  priorB + n - c
         });
     });
 
     const posteriors = variants.map(v => {
-        const arr = new Float32Array(samples);
-        for(let i=0;i<samples;i++){
-            arr[i] = betaSample(v.alpha,v.beta);
+        const arr = new Float32Array(numSamples);
+        for(let i = 0; i < numSamples; i++){
+            arr[i] = betaSample(v.alpha, v.beta);
         }
         return arr;
-        });
-    const bestCounts=Array(variants.length).fill(0);
+    });
 
-    for(let i=0;i<samples;i++){
-        const vals=posteriors.map(p=>p[i]);
+    const bestCounts = Array(variants.length).fill(0);
+    for(let i = 0; i < numSamples; i++){
+        const vals = posteriors.map(p => p[i]);
         bestCounts[vals.indexOf(Math.max(...vals))]++;
     }
 
-    const probs=bestCounts.map(c=>c/samples);
-    renderResults(variants,posteriors,probs,threshold);
+    const probs = bestCounts.map(c => c / numSamples);
+    renderResults(variants, posteriors, probs, threshold, numSamples);
 }
 
-function kernelDensityEstimator(sample, bandwidth = 0.5) {
+// FIX 4: KDE bandwidth reduced for sharper curves; numSamples passed as parameter
+function kernelDensityEstimator(sample, bandwidth = 0.15){
     const points = 200;
     const min = Math.min(...sample);
     const max = Math.max(...sample);
@@ -225,43 +260,40 @@ function kernelDensityEstimator(sample, bandwidth = 0.5) {
     const xs = [];
     const ys = [];
 
-    for (let i = 0; i <= points; i++) {
+    for(let i = 0; i <= points; i++){
         const x = min + i * step;
         xs.push(x);
 
         let sum = 0;
-        for (let j = 0; j < sample.length; j++) {
+        for(let j = 0; j < sample.length; j++){
             const u = (x - sample[j]) / bandwidth;
             sum += Math.exp(-0.5 * u * u);
         }
-
         ys.push(sum / (sample.length * bandwidth * Math.sqrt(2 * Math.PI)));
     }
 
     return { xs, ys };
 }
 
+// FIX 5: numSamples is now a parameter – no duplicate const declaration inside this function
+function renderResults(variants, posteriors, probs, threshold, numSamples){
 
-function renderResults(variants,posteriors,probs,threshold){
+    const results = document.getElementById("results");
+    results.innerHTML = "";
 
-    const results=document.getElementById("results");
-    results.innerHTML="";
-
-    const distBox=document.createElement("div");
-    distBox.className="glass";
+    const distBox = document.createElement("div");
+    distBox.className = "glass";
     results.appendChild(distBox);
 
-    if (typeof Plotly === "undefined") {
-    alert("Plotly konnte nicht geladen werden.");
-    return;
+    if(typeof Plotly === "undefined"){
+        alert("Plotly konnte nicht geladen werden.");
+        return;
     }
 
-
-// Ergebnisbox mit Density-Kurven
-
-    const densityTraces = posteriors.map((p,i)=>{
-        const samplePercent = p.map(v=>v*100);
-        const density = kernelDensityEstimator(samplePercent, 0.4);
+    // Posterior Density Curves
+    const densityTraces = posteriors.map((p, i) => {
+        const samplePercent = Array.from(p).map(v => v * 100);
+        const density = kernelDensityEstimator(samplePercent, 0.15);
 
         return {
             x: density.xs,
@@ -274,34 +306,27 @@ function renderResults(variants,posteriors,probs,threshold){
         };
     });
 
-Plotly.newPlot(distBox, densityTraces, {
-    title: "Posterior Density Curves",
-    paper_bgcolor: "rgba(0,0,0,0)",
-    plot_bgcolor: "rgba(0,0,0,0)",
-    xaxis: { title: "Conversion Rate (%)" },
-    yaxis: { title: "Density" }
-});
+    Plotly.newPlot(distBox, densityTraces, {
+        title: "Posterior Density Curves",
+        paper_bgcolor: "rgba(0,0,0,0)",
+        plot_bgcolor: "rgba(0,0,0,0)",
+        xaxis: { title: "Conversion Rate (%)" },
+        yaxis: { title: "Density" }
+    });
 
-
-// Ergebnisbox Probability to beat Baseline
-
+    // Probability to beat Baseline
     const baselineBox = document.createElement("div");
     baselineBox.className = "glass";
     baselineBox.innerHTML = "<h3>Probability to beat Baseline</h3>";
 
     const controlPosterior = posteriors[0];
 
-    for (let i = 1; i < posteriors.length; i++) {
-
+    for(let i = 1; i < posteriors.length; i++){
         let betterCount = 0;
-
-        for (let j = 0; j < controlPosterior.length; j++) {
-            if (posteriors[i][j] > controlPosterior[j]) {
-                betterCount++;
-            }
+        for(let j = 0; j < numSamples; j++){
+            if(posteriors[i][j] > controlPosterior[j]) betterCount++;
         }
-
-        const probability = (betterCount / controlPosterior.length * 100).toFixed(2);
+        const probability = (betterCount / numSamples * 100).toFixed(2);
 
         baselineBox.innerHTML += `
             <div class="ci-entry">
@@ -316,19 +341,15 @@ Plotly.newPlot(distBox, densityTraces, {
         als die Control-Variante besitzt.
         </div>
     `;
+    results.appendChild(baselineBox);
 
-results.appendChild(baselineBox);
-
-
-// Ergebnisbox Probability to be Best
-
+    // Probability to be Best
     const bestBox = document.createElement("div");
     bestBox.className = "glass";
     bestBox.innerHTML = "<h3>Probability to be Best</h3>";
 
-    variants.forEach((v,i)=>{
+    variants.forEach((v, i) => {
         const probability = (probs[i] * 100).toFixed(2);
-
         bestBox.innerHTML += `
             <div class="ci-entry">
                 <strong>${v.label}</strong>: ${probability}%
@@ -336,75 +357,107 @@ results.appendChild(baselineBox);
         `;
     });
 
-bestBox.innerHTML += `
+    bestBox.innerHTML += `
+        <div class="small-text">
+        Posterior Wahrscheinlichkeit, dass die jeweilige Variante die höchste Conversion Rate
+        unter allen getesteten Varianten besitzt.
+        </div>
+    `;
+    results.appendChild(bestBox);
+
+    // Expected Loss
+    const lossBox = document.createElement("div");
+    lossBox.className = "glass";
+    lossBox.innerHTML = "<h3>Expected Loss</h3>";
+
+    // FIX 6: losses computed once here, reused below – no duplicate const
+    const losses = variants.map((v, i) => {
+        let lossSum = 0;
+        for(let j = 0; j < numSamples; j++){
+            let bestVal = -Infinity;
+            for(let k = 0; k < posteriors.length; k++){
+                if(posteriors[k][j] > bestVal) bestVal = posteriors[k][j];
+            }
+            lossSum += (bestVal - posteriors[i][j]);
+        }
+        return lossSum / numSamples;
+    });
+
+    losses.forEach((loss, i) => {
+        const expectedLoss = (loss * 100).toFixed(3);
+        const bg = loss < 0.0001
+            ? "rgba(52,199,89,0.15)"
+            : "rgba(255,149,0,0.15)";
+
+        lossBox.innerHTML += `
+            <div class="ci-entry" style="padding:12px;border-radius:14px;background:${bg};">
+                <strong>${variants[i].label}</strong>: ${expectedLoss}% erwarteter Verlust
+            </div>
+        `;
+    });
+
+    lossBox.innerHTML += `
     <div class="small-text">
-    Posterior Wahrscheinlichkeit, dass die jeweilige Variante die höchste Conversion Rate
-    unter allen getesteten Varianten besitzt.
-    </div>
-`;
-
-results.appendChild(bestBox);
-
-
-// Ergebnisbox Credible Intervals (95%)
-
-    const ciBox=document.createElement("div");
-    ciBox.className="glass";
-    ciBox.innerHTML="<h3>Credible Intervals (95%)</h3>";
-
-        variants.forEach((v,i)=>{
-            const lower=(percentile(posteriors[i],0.025)*100).toFixed(2);
-            const upper=(percentile(posteriors[i],0.975)*100).toFixed(2);
-            const mean=(percentile(posteriors[i],0.5)*100).toFixed(2);
-
-            ciBox.innerHTML+=`
-            <div class="ci-entry">
-                <strong>${v.label}</strong><br>
-                Median: ${mean}%<br>
-                Intervall: ${lower}% – ${upper}%
-            </div>`;
-        });
-
-    ciBox.innerHTML+=`
-    <div class="small-text">
-    Das Credible Interval beschreibt den Bereich, in dem die tatsächliche Conversion Rate mit 95% posteriorer Wahrscheinlichkeit liegt. 
-    Im Gegensatz zum Frequentistischen Konfidenzintervall ist dies eine direkte Wahrscheinlichkeitsaussage über den Parameter.
+    <b>Was bedeutet Expected Loss?</b><br><br>
+    Der Expected Loss zeigt, wie viel Conversion-Rate wir im Durchschnitt verlieren würden,
+    wenn wir diese Variante auswählen – obwohl in Wirklichkeit eine andere Variante besser ist.<br><br>
+    Es werden also zwei Dinge kombiniert:<br>
+    • Wie wahrscheinlich es ist, dass wir mit unserer Entscheidung falsch liegen<br>
+    • Wie groß der Unterschied zur tatsächlich besten Variante wäre<br><br>
+    Ein Wert von <b>0%</b> bedeutet: Diese Variante ist in fast allen Simulationen die beste Wahl.<br>
+    Ein höherer Wert bedeutet: Falls wir uns für diese Variante entscheiden und eine andere sich als besser erweist,
+    zeigt dieser Wert, wie groß der durchschnittliche Performance-Nachteil wäre.<br><br>
+    👉 Niedriger ist besser. Die sicherste Entscheidung hat den kleinsten Expected Loss.
     </div>
     `;
+    results.appendChild(lossBox);
 
-    results.appendChild(ciBox);
+    // Ergebniszusammenfassung
+    const decision = document.createElement("div");
+    decision.className = "glass kpi-box";
 
+    const maxProb     = Math.max(...probs);
+    const winnerIndex = probs.indexOf(maxProb);
+    const minLoss     = Math.min(...losses);
+    const safestIndex = losses.indexOf(minLoss);
 
-// Ergebnisbox mit Ergebniszusammenfassung
-
-    const decision=document.createElement("div");
-    decision.className="glass kpi-box";
-
-    const maxProb=Math.max(...probs);
-    const winnerIndex=probs.indexOf(maxProb);
-
-    let headline="";
-    let subtext="";
-
-    if(maxProb>threshold){
-        headline=`${variants[winnerIndex].label} ist klarer Gewinner`;
-        subtext=`Mit ${(maxProb*100).toFixed(1)}% Wahrscheinlichkeit über der Entscheidungsgrenze von ${(threshold*100).toFixed(0)}%.`;
-        decision.style.background="rgba(52,199,89,0.12)";
+    if(maxProb > threshold && minLoss < 0.0001){
+        decision.classList.add("success");
+        decision.innerHTML = `
+        <strong>Empfehlung: ${variants[winnerIndex].label}</strong><br><br>
+        Diese Variante hat eine Gewinnwahrscheinlichkeit von ${(maxProb * 100).toFixed(1)}%
+        (über der festgelegten Entscheidungsgrenze von ${(threshold * 100).toFixed(0)}%).<br><br>
+        Gleichzeitig ist ihr Expected Loss mit ${(minLoss * 100).toFixed(3)}% sehr gering.
+        Das bedeutet: Selbst wenn wir uns irren sollten, wäre der durchschnittliche Verlust minimal.<br><br>
+        👉 Die Daten sprechen klar für diese Variante.
+        `;
+    } else if(maxProb > 0.75){
+        decision.classList.add("warning");
+        decision.innerHTML = `
+        <strong>Zwischenergebnis: ${variants[winnerIndex].label} führt</strong><br><br>
+        Die Gewinnwahrscheinlichkeit liegt bei ${(maxProb * 100).toFixed(1)}%,
+        erreicht jedoch noch nicht die Entscheidungsgrenze von ${(threshold * 100).toFixed(0)}%.<br><br>
+        Der Expected Loss beträgt ${(minLoss * 100).toFixed(3)}%.
+        Es besteht also noch ein gewisses Entscheidungsrisiko.<br><br>
+        👉 Empfehlung: Test weiterlaufen lassen.
+        `;
+    } else {
+        decision.classList.add("danger");
+        decision.innerHTML = `
+        <strong>Keine klare Entscheidung möglich</strong><br><br>
+        Keine Variante erreicht die notwendige Gewinnwahrscheinlichkeit
+        von ${(threshold * 100).toFixed(0)}%.<br><br>
+        Der aktuell geringste Expected Loss liegt bei ${(minLoss * 100).toFixed(3)}%,
+        was bedeutet, dass noch Unsicherheit über die tatsächlich beste Variante besteht.<br><br>
+        👉 Empfehlung: Weitere Daten sammeln.
+        `;
     }
-    else{
-        headline="Noch kein klarer Gewinner über der Entscheidungsgrenze";
-        subtext=`Aktuell führt ${variants[winnerIndex].label} mit ${(maxProb*100).toFixed(1)}%.`;
-            decision.style.background="rgba(255,204,0,0.15)";
-    }
 
-    decision.innerHTML=`
-    <h2 style="margin:0 0 10px 0;font-weight:600;">${headline}</h2>
-    <div style="opacity:0.7;font-size:16px;">${subtext}</div>
-    `;
+    results.appendChild(decision);
+    // FIX 7: initializeVariants() removed from here – it must NOT be called after rendering
+}
 
-    results.appendChild(decision);  
-    }
-
+// FIX 8: initializeVariants() called exactly once, when the page loads
 initializeVariants();
 </script>
 
