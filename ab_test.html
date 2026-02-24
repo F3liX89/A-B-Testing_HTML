@@ -147,7 +147,7 @@ button:hover {
 <div id="results"></div>
 
 <script>
-// FIX 1: variantCounter tracks only non-control variants for correct labeling
+    
 let variantCounter = 0;
 
 function toggleMode(){
@@ -155,7 +155,6 @@ function toggleMode(){
     document.body.classList.toggle("light");
 }
 
-// FIX 2: initializeVariants() is called once at the bottom of the script, not inside renderResults()
 function initializeVariants(){
     variantCounter = 0;
     document.getElementById("variants").innerHTML = "";
@@ -167,8 +166,7 @@ function addVariant(isControl = false){
     const row = document.createElement("div");
     row.className = "variant-row";
 
-    // FIX 3: Label counter is based on current non-control rows, not a global counter
-    const nonControlCount = document.querySelectorAll(".variant-row").length; // rows already present
+    const nonControlCount = document.querySelectorAll(".variant-row").length;
     const label = isControl ? "Control" : `Variante ${nonControlCount}`;
 
     row.innerHTML = `
@@ -217,7 +215,7 @@ function runTest(){
     const priorA    = parseFloat(document.getElementById("priorA").value);
     const priorB    = parseFloat(document.getElementById("priorB").value);
     const threshold = parseFloat(document.getElementById("threshold").value) / 100;
-    const numSamples = 5000;   // renamed to avoid collision
+    const numSamples = 100000;
 
     const rows = document.querySelectorAll(".variant-row");
     const variants = [];
@@ -250,7 +248,6 @@ function runTest(){
     renderResults(variants, posteriors, probs, threshold, numSamples);
 }
 
-// FIX 4: KDE bandwidth reduced for sharper curves; numSamples passed as parameter
 function kernelDensityEstimator(sample, bandwidth = 0.15){
     const points = 200;
     const min = Math.min(...sample);
@@ -275,7 +272,6 @@ function kernelDensityEstimator(sample, bandwidth = 0.15){
     return { xs, ys };
 }
 
-// FIX 5: numSamples is now a parameter – no duplicate const declaration inside this function
 function renderResults(variants, posteriors, probs, threshold, numSamples){
 
     const results = document.getElementById("results");
@@ -370,7 +366,6 @@ function renderResults(variants, posteriors, probs, threshold, numSamples){
     lossBox.className = "glass";
     lossBox.innerHTML = "<h3>Expected Loss</h3>";
 
-    // FIX 6: losses computed once here, reused below – no duplicate const
     const losses = variants.map((v, i) => {
         let lossSum = 0;
         for(let j = 0; j < numSamples; j++){
@@ -454,10 +449,8 @@ function renderResults(variants, posteriors, probs, threshold, numSamples){
     }
 
     results.appendChild(decision);
-    // FIX 7: initializeVariants() removed from here – it must NOT be called after rendering
 }
 
-// FIX 8: initializeVariants() called exactly once, when the page loads
 initializeVariants();
 </script>
 
