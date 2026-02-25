@@ -3,6 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!--
+    Content Security Policy:
+    - script-src: nur das Plotly-CDN + inline-Skripte (nötig für den Blob-Worker)
+    - style-src:  nur Google Fonts + eigene Inline-Styles
+    - font-src:   nur Google Fonts
+    - connect-src / img-src / object-src: keine externen Verbindungen erlaubt
+    Schützt gegen XSS-Angriffe, die externe Ressourcen nachladen würden.
+-->
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'none';
+               script-src 'self' 'unsafe-inline' https://cdn.plot.ly;
+               style-src  'self' 'unsafe-inline' https://fonts.googleapis.com;
+               font-src   https://fonts.gstatic.com;
+               worker-src blob:;
+               img-src    data: blob:;">
 <title>Bayesian A/B Testing Dashboard</title>
 <script defer src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 <!--
@@ -1158,7 +1173,7 @@ function addAnalysisBox(title = 'Neues Segment', isMain = false) {
             -->
             <input type="text"
                    class="inp-box-title"
-                   value="${title}"
+                   value="${escapeHTML(title)}"
                    placeholder="Name des Segments">
 
             <!-- Badge: "Gesamt" (erste Box) oder "Segment" (weitere Boxen) -->
@@ -1236,8 +1251,8 @@ function addVariantToBox(varContainerId, isControl = false, visitors = 1000, con
         <!-- Editierbarer Name -->
         <input type="text"
                class="inp-name"
-               value="${displayName}"
-               placeholder="${defaultName}"
+               value="${escapeHTML(displayName)}"
+               placeholder="${escapeHTML(defaultName)}"
                title="Namen bearbeiten">
 
         <!-- Besucher -->
@@ -1315,8 +1330,8 @@ function updateRate(row) {
  */
 function parseAndValidate() {
     const boxes  = document.querySelectorAll('.analysis-box');
-    const priorA = parseFloat(document.getElementById('priorA').value);
-    const priorB = parseFloat(document.getElementById('priorB').value);
+    const priorA = Math.max(0.1, parseFloat(document.getElementById('priorA').value) || 1);
+    const priorB = Math.max(0.1, parseFloat(document.getElementById('priorB').value) || 1);
 
     if (boxes.length < 1) {
         return { valid: false, error: 'Bitte mindestens eine Analyse-Box befüllen.' };
@@ -1769,9 +1784,12 @@ async function runTest() {
     document.getElementById('results').innerHTML = '';
     document.getElementById('shareBtn').style.display = 'none';
 
-    const numSamples = parseInt(document.getElementById('numSamples').value, 10) || 10000;
-    const threshold  = parseFloat(document.getElementById('threshold').value) / 100;
-    const ciLevel    = parseFloat(document.getElementById('ciLevel').value) / 100;
+    const numSamples = Math.min(100000, Math.max(1000,
+        parseInt(document.getElementById('numSamples').value, 10) || 10000));
+    const threshold  = Math.min(0.9999, Math.max(0.5,
+        parseFloat(document.getElementById('threshold').value) / 100));
+    const ciLevel    = Math.min(0.9999, Math.max(0.5,
+        parseFloat(document.getElementById('ciLevel').value) / 100));
 
     try {
         // 3. Für jede Analyse-Box: unabhängiges Sampling + Stats
@@ -1976,7 +1994,7 @@ function renderSummaryMetrics(container, stats) {
         card.className = 'metric-card';
         card.innerHTML = `
             <div class="metric-label" style="color:${s.color};">
-                ${s.label}
+                ${escapeHTML(s.label)}
             </div>
             <div class="metric-value">${(s.rate * 100).toFixed(2)}%</div>
             <div class="metric-sub">${s.c.toLocaleString()} / ${s.n.toLocaleString()} Conversions</div>
@@ -2124,7 +2142,7 @@ function renderProbabilities(container, stats, threshold) {
             <div style="width:100%;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                     <span class="variant-badge" style="background:${hexToRgba(s.color,0.12)};color:${s.color};">
-                        ${s.label}
+                        ${escapeHTML(s.label)}
                     </span>
                     <span style="font-family:'Fira Code',monospace; font-weight:600; font-size:15px; color:${isAboveThreshold ? 'var(--success)' : 'var(--text-primary)'};">
                         ${pct}%
@@ -2164,7 +2182,7 @@ function renderProbabilities(container, stats, threshold) {
             <div style="width:100%;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                     <span class="variant-badge" style="background:${hexToRgba(s.color,0.12)};color:${s.color};">
-                        ${s.label}
+                        ${escapeHTML(s.label)}
                     </span>
                     <span style="font-family:'Fira Code',monospace; font-weight:600; font-size:15px; color:${isWin ? 'var(--success)' : 'var(--text-primary)'};">
                         ${pct}% ${isWin ? '✓' : ''}
@@ -2213,7 +2231,7 @@ function renderCredibleIntervals(container, stats, ciLevel) {
         entry.innerHTML = `
             <div class="ci-left">
                 <span class="variant-badge" style="background:${hexToRgba(s.color,0.12)};color:${s.color};">
-                    ${s.label}
+                    ${escapeHTML(s.label)}
                 </span>
             </div>
             <div class="ci-values">
@@ -2282,7 +2300,7 @@ function renderExpectedLoss(container, stats) {
         entry.innerHTML = `
             <div class="ci-left">
                 <span class="variant-badge" style="background:${hexToRgba(s.color,0.12)};color:${s.color};">
-                    ${s.label}
+                    ${escapeHTML(s.label)}
                 </span>
                 ${isBest ? '<span style="font-size:12px;color:var(--success);font-weight:600;">Niedrigster Loss ✓</span>' : ''}
             </div>
@@ -2318,14 +2336,15 @@ function renderDecision(container, stats, threshold) {
 
     // Entscheidungslogik – drei Stufen
     let type, icon, title, body;
+    // winner.label aus Nutzereingabe → wird in innerHTML injiziert → escapen
+    const safeLabel = escapeHTML(winner.label);
 
     if (maxProbBest >= threshold && minLoss < 0.0001) {
-        // Klarer Gewinner
         type  = 'success';
         icon  = '✅';
-        title = `Empfehlung: ${winner.label} einführen`;
+        title = `Empfehlung: ${safeLabel} einführen`;
         body  = `
-            <b>${winner.label}</b> hat eine Gewinnwahrscheinlichkeit von
+            <b>${safeLabel}</b> hat eine Gewinnwahrscheinlichkeit von
             <b>${(maxProbBest * 100).toFixed(1)}%</b> – über der gesetzten Entscheidungsgrenze von
             ${(threshold * 100).toFixed(0)}%.<br><br>
             Der Expected Loss beträgt <b>${(minLoss * 100).toFixed(3)}%</b> – selbst im unwahrscheinlichen
@@ -2334,19 +2353,17 @@ function renderDecision(container, stats, threshold) {
             <b>${winner.uplift !== null ? formatUplift(winner.uplift) : 'Control'}</b>
         `;
     } else if (maxProbBest >= 0.75) {
-        // Tendenz erkennbar, aber noch nicht sicher
         type  = 'warning';
         icon  = '⏳';
-        title = `Tendenz: ${winner.label} führt – Test fortsetzen`;
+        title = `Tendenz: ${safeLabel} führt – Test fortsetzen`;
         body  = `
-            <b>${winner.label}</b> liegt vorne mit ${(maxProbBest * 100).toFixed(1)}% Gewinnwahrscheinlichkeit,
+            <b>${safeLabel}</b> liegt vorne mit ${(maxProbBest * 100).toFixed(1)}% Gewinnwahrscheinlichkeit,
             hat aber die Entscheidungsgrenze von ${(threshold * 100).toFixed(0)}% noch nicht erreicht.<br><br>
             Expected Loss: <b>${(minLoss * 100).toFixed(3)}%</b> – noch nicht gering genug
             für eine sichere Entscheidung.<br><br>
             Empfehlung: Weitere Daten sammeln, um die Unsicherheit zu reduzieren.
         `;
     } else {
-        // Keine Aussage möglich
         type  = 'danger';
         icon  = '🔍';
         title = 'Keine klare Entscheidung möglich';
@@ -2422,7 +2439,30 @@ function exportCSV() {
 // ============================================================
 
 /**
- * Erzeugt ein neues Panel-Element (.glass + result-panel).
+ * Escapet einen String für sicheres Einfügen in innerHTML.
+ *
+ * Warum nötig: Varianten-Namen und Box-Titel werden vom Nutzer
+ * frei eingegeben und anschließend via Template-Literal in
+ * innerHTML geschrieben. Ohne Escaping könnte ein Name wie
+ *   <img src=x onerror=alert(1)>
+ * als HTML interpretiert werden (Stored-XSS innerhalb der Seite).
+ *
+ * Diese Funktion ersetzt die fünf HTML-Sonderzeichen durch ihre
+ * Entitäten, bevor der String in den DOM gelangt.
+ *
+ * @param {string} str - Beliebiger Nutzer-String
+ * @returns {string}   - HTML-sicherer String
+ */
+function escapeHTML(str) {
+    return String(str)
+        .replace(/&/g,  '&amp;')
+        .replace(/</g,  '&lt;')
+        .replace(/>/g,  '&gt;')
+        .replace(/"/g,  '&quot;')
+        .replace(/'/g,  '&#039;');
+}
+
+/**
  * @param {string} extraClass - Optional weitere CSS-Klasse
  * @returns {HTMLElement}
  */
