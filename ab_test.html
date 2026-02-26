@@ -25,7 +25,8 @@
     Fira Code: Zahlen & Monospace-Werte – humanistischere Ziffernform,
                klare 0/O-Unterscheidung, angenehm bei Dezimalzahlen.
 -->
-<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- IBM Plex Mono: exzellente Tabular-Figures, klar lesbare Ziffern, kein Styling-Noise -->
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <!-- ============================================================
      STYLESHEET
@@ -46,49 +47,49 @@
       Dark-Mode-Overrides werden im body.dark-Block gesetzt.
    ---------------------------------------------------------- */
 :root {
-    /* Hintergrund */
-    --bg:              #f0f4ff;
-    --bg-gradient:     linear-gradient(145deg, #e8eeff 0%, #f5f0ff 50%, #eff8ff 100%);
+    /* Hintergrund – neutrales Warmgrau statt Blau-Lila */
+    --bg:              #f5f5f4;
+    --bg-gradient:     linear-gradient(160deg, #f5f5f4 0%, #f0f0ef 100%);
 
     /* Glassmorphism-Karten */
-    --glass-bg:        rgba(255, 255, 255, 0.62);
-    --glass-border:    rgba(255, 255, 255, 0.85);
-    --glass-shadow:    0 4px 32px rgba(80, 90, 160, 0.10);
+    --glass-bg:        rgba(255, 255, 255, 0.78);
+    --glass-border:    rgba(0, 0, 0, 0.07);
+    --glass-shadow:    0 2px 16px rgba(0, 0, 0, 0.07);
 
     /* Typografie */
-    --text-primary:    #18181b;
-    --text-secondary:  #52525b;
-    --text-muted:      #a1a1aa;
+    --text-primary:    #1c1917;
+    --text-secondary:  #57534e;
+    --text-muted:      #a8a29e;
 
-    /* Akzentfarben */
-    --accent:          #5b6cf9;
-    --accent-soft:     rgba(91, 108, 249, 0.12);
-    --accent-hover:    #4756e8;
+    /* Akzent – gedämpftes Schieferblau statt Indigo */
+    --accent:          #3b5bdb;
+    --accent-soft:     rgba(59, 91, 219, 0.10);
+    --accent-hover:    #2f4bbf;
 
-    /* Semantische Farben */
-    --success:         #22c55e;
-    --success-soft:    rgba(34, 197, 94, 0.12);
-    --warning:         #f59e0b;
-    --warning-soft:    rgba(245, 158, 11, 0.14);
-    --danger:          #ef4444;
-    --danger-soft:     rgba(239, 68, 68, 0.12);
+    /* Semantische Farben – gesättigter, aber nicht grell */
+    --success:         #2d8a4e;
+    --success-soft:    rgba(45, 138, 78, 0.10);
+    --warning:         #b45309;
+    --warning-soft:    rgba(180, 83, 9, 0.10);
+    --danger:          #c0392b;
+    --danger-soft:     rgba(192, 57, 43, 0.10);
 
-    /* Varianten-Farben (für Traces im Chart + Badges) */
-    --c0: #5b6cf9;   /* Control  – Indigo   */
-    --c1: #f97316;   /* Var 1    – Orange   */
-    --c2: #22c55e;   /* Var 2    – Grün     */
-    --c3: #ec4899;   /* Var 3    – Pink     */
-    --c4: #a855f7;   /* Var 4    – Violett  */
+    /* Varianten-Farben – gedämpft, harmonisch */
+    --c0: #3b5bdb;   /* Control  – Schieferblau  */
+    --c1: #c2440e;   /* Var 1    – Terrakotta    */
+    --c2: #2d8a4e;   /* Var 2    – Tannengrün    */
+    --c3: #7c3d8f;   /* Var 3    – Pflaume       */
+    --c4: #0e7490;   /* Var 4    – Petrol        */
 
     /* Abstände & Radii */
-    --radius-sm:   12px;
-    --radius-md:   20px;
-    --radius-lg:   28px;
-    --gap:         28px;
-    --pad:         36px;
+    --radius-sm:   8px;
+    --radius-md:   14px;
+    --radius-lg:   20px;
+    --gap:         24px;
+    --pad:         28px;
 
     /* Übergänge */
-    --transition:  all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition:  all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ----------------------------------------------------------
@@ -137,7 +138,7 @@ body {
     font-size: 14px;
     color: var(--text-muted);
     margin-top: 4px;
-    font-family: 'Fira Code', monospace;
+    font-family: 'IBM Plex Mono', monospace;
 }
 
 /* Glassmorphism-Karte – Basis-Baustein für alle Panels */
@@ -180,27 +181,60 @@ body {
 }
 
 /* ----------------------------------------------------------
-   4. Formular-Elemente
+   4. Formular-Elemente – Tabellen-Layout für Varianten
    ---------------------------------------------------------- */
+
+/* Spaltenköpfe über der ersten Varianten-Zeile */
+.variant-col-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 4px 6px 4px;
+    border-bottom: 1px solid rgba(0,0,0,0.07);
+    margin-bottom: 6px;
+}
+
+.col-spacer      { width: 10px; flex-shrink: 0; }        /* Farbpunkt */
+.col-spacer-cr   { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 500; min-width: 115px; padding-left: 4px; }
+.col-spacer-name { width: 130px; flex-shrink: 0; }       /* Name-Input */
+.btn-remove-placeholder { width: 26px; flex-shrink: 0; }
+
+/* Editierbare Spaltenbezeichnung */
+.col-label-input {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    background: transparent;
+    border: 1.5px solid transparent;
+    border-radius: 5px;
+    padding: 2px 6px;
+    width: 105px;
+    outline: none;
+    font-family: 'Inter', sans-serif;
+    transition: var(--transition);
+    cursor: pointer;
+}
+.col-label-input:hover { border-color: rgba(0,0,0,0.10); background: rgba(0,0,0,0.03); }
+.col-label-input:focus { border-color: var(--accent); background: white; color: var(--text-primary); cursor: text; }
+body.dark .col-label-input:hover { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); }
+body.dark .col-label-input:focus { background: rgba(255,255,255,0.08); }
 
 /* Einzelne Varianten-Zeile */
 .variant-row {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding: 12px 16px;
-    background: rgba(255,255,255,0.5);
-    border-radius: var(--radius-md);
-    margin-bottom: 10px;
+    gap: 10px;
+    padding: 7px 4px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 3px;
     border: 1.5px solid transparent;
-    transition: var(--transition);
+    transition: background 0.15s;
 }
+.variant-row:hover { background: rgba(0,0,0,0.025); }
 
-.variant-row:hover {
-    border-color: var(--accent-soft);
-}
-
-/* Farbiger Punkt vor dem Label */
+/* Farbiger Punkt */
 .variant-dot {
     width: 10px;
     height: 10px;
@@ -208,23 +242,67 @@ body {
     flex-shrink: 0;
 }
 
-.variant-label {
-    width: 100px;
-    font-weight: 500;
-    font-size: 14px;
+/* Varianten-Name */
+.inp-name {
+    width: 130px;
     flex-shrink: 0;
-}
-
-/* Conversion Rate – wird live berechnet und neben den Inputs angezeigt */
-.variant-rate {
-    font-family: 'Fira Code', monospace;
-    font-size: 14px;       /* +1px für bessere Lesbarkeit der Live-CR */
-    color: var(--accent);
-    min-width: 54px;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid transparent;
+    background: transparent;
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
     font-weight: 500;
+    outline: none;
+    transition: var(--transition);
+}
+.inp-name:hover { border-color: rgba(0,0,0,0.10); background: rgba(255,255,255,0.6); }
+.inp-name:focus { border-color: var(--accent); background: white; box-shadow: 0 0 0 2px var(--accent-soft); }
+body.dark .inp-name:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
+body.dark .inp-name:focus { background: rgba(255,255,255,0.08); }
+
+/* Zahl-Eingabefelder */
+input[type="number"],
+.inp-visitors,
+.inp-conversions {
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid rgba(0,0,0,0.09);
+    background: white;
+    color: var(--text-primary);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    width: 105px;
+    outline: none;
+    transition: var(--transition);
 }
 
-/* Inlinebeschriftung für Inputs */
+input[type="number"]:focus,
+.inp-visitors:focus,
+.inp-conversions:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+/* CR + Uplift nebeneinander */
+.variant-cr-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 115px;
+}
+
+/* Conversion Rate – live angezeigt */
+.variant-rate {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    min-width: 54px;
+}
+
+/* Inlinebeschriftung für Inputs (Legacy-Kompatibilität) */
 .input-group {
     display: flex;
     flex-direction: column;
@@ -237,24 +315,6 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     font-weight: 500;
-}
-
-input[type="number"] {
-    padding: 8px 12px;
-    border-radius: var(--radius-sm);
-    border: 1.5px solid rgba(0,0,0,0.08);
-    background: rgba(255,255,255,0.8);
-    color: var(--text-primary);
-    font-family: 'Fira Code', monospace;
-    font-size: 15px;      /* +1px: Fira Code wirkt bei gleicher Größe etwas kompakter */
-    width: 105px;
-    outline: none;
-    transition: var(--transition);
-}
-
-input[type="number"]:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
 /* Validierungsfehler – wird per JS gesetzt */
@@ -423,7 +483,7 @@ input.invalid {
 .metric-value {
     font-size: 24px;       /* von 22px: mehr Präsenz bei den Haupt-KPIs */
     font-weight: 600;
-    font-family: 'Fira Code', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     color: var(--text-primary);
 }
 
@@ -442,7 +502,7 @@ input.invalid {
     border-radius: 20px;
     font-size: 13px;       /* von 12px */
     font-weight: 600;
-    font-family: 'Fira Code', monospace;
+    font-family: 'IBM Plex Mono', monospace;
 }
 
 /* Einzel-Zeile in den Ergebnis-Boxen */
@@ -487,7 +547,7 @@ input.invalid {
 }
 
 .ci-stat-value {
-    font-family: 'Fira Code', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 16px;       /* von 15px: Hauptkennzahlen in den Tabellen */
     font-weight: 500;
     color: var(--text-primary);
@@ -495,7 +555,7 @@ input.invalid {
 
 /* Uplift-Chip: grün bei positivem, rot bei negativem Uplift */
 .uplift-chip {
-    font-family: 'Fira Code', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 13px;       /* von 12px */
     font-weight: 600;
     padding: 3px 9px;
@@ -621,17 +681,19 @@ input.invalid {
    6. Dark Mode Overrides
    ---------------------------------------------------------- */
 body.dark {
-    --bg-gradient:   linear-gradient(145deg, #0f1117 0%, #161822 50%, #111520 100%);
-    --glass-bg:      rgba(28, 30, 42, 0.75);
+    --bg-gradient:   linear-gradient(160deg, #141414 0%, #1a1a1a 100%);
+    --glass-bg:      rgba(30, 30, 30, 0.90);
     --glass-border:  rgba(255, 255, 255, 0.08);
-    --glass-shadow:  0 4px 32px rgba(0, 0, 0, 0.40);
-    --text-primary:  #f4f4f5;
-    --text-secondary:#a1a1aa;
-    --text-muted:    #52525b;
-    --accent-soft:   rgba(91, 108, 249, 0.18);
+    --glass-shadow:  0 2px 16px rgba(0, 0, 0, 0.50);
+    --text-primary:  #f5f5f4;
+    --text-secondary:#a8a29e;
+    --text-muted:    #78716c;
+    --accent-soft:   rgba(59, 91, 219, 0.20);
 }
 
-body.dark input[type="number"] {
+body.dark input[type="number"],
+body.dark .inp-visitors,
+body.dark .inp-conversions {
     background: rgba(255,255,255,0.06);
     border-color: rgba(255,255,255,0.10);
     color: var(--text-primary);
@@ -646,6 +708,7 @@ body.dark .btn-ghost:hover { background: rgba(255,255,255,0.06); }
 body.dark .divider::before,
 body.dark .divider::after  { background: rgba(255,255,255,0.08); }
 body.dark .small-text      { border-color: rgba(255,255,255,0.08); }
+body.dark #settingsModal   { background: rgba(20,20,35,0.97); border-color: rgba(255,255,255,0.10); }
 
 /* ----------------------------------------------------------
    ANALYSE-BOXEN-SYSTEM
@@ -897,7 +960,7 @@ body.dark .btn-toggle-seg { border-color: rgba(255,255,255,0.12); }
 
 /* Live-CR-Anzeige für einzelne Segment-Zeile */
 .segment-rate {
-    font-family: 'Fira Code', monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 12px;
     color: var(--accent);
     min-width: 48px;
@@ -912,15 +975,15 @@ body.dark .btn-toggle-seg { border-color: rgba(255,255,255,0.12); }
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
-    margin-bottom: 24px;
-    padding-bottom: 16px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
     border-bottom: 1.5px solid rgba(0,0,0,0.07);
 }
 
 body.dark .tab-bar { border-color: rgba(255,255,255,0.08); }
 
 .tab-btn {
-    padding: 7px 18px;
+    padding: 5px 16px;
     border-radius: 10px;
     border: 1.5px solid rgba(0,0,0,0.10);
     background: transparent;
@@ -952,6 +1015,85 @@ body.dark .tab-btn { border-color: rgba(255,255,255,0.12); }
 
 .tab-panel.active { display: block; }
 
+/* Live-Uplift neben der CR-Anzeige in der Eingabezeile */
+.variant-uplift {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.variant-uplift.pos { background: var(--success-soft); color: var(--success); }
+.variant-uplift.neg { background: var(--danger-soft);  color: var(--danger); }
+.variant-uplift.hidden { display: none; }
+
+/* Kompaktere Ergebnis-Panels */
+.glass.result-panel {
+    padding: 20px 24px;
+    margin-bottom: 16px;
+}
+
+.section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.metric-card {
+    background: rgba(255,255,255,0.5);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    border: 1.5px solid rgba(255,255,255,0.9);
+}
+
+.metric-value {
+    font-size: 20px;
+    font-weight: 600;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text-primary);
+}
+
+.ci-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 14px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 7px;
+    background: rgba(255,255,255,0.45);
+    border: 1.5px solid rgba(255,255,255,0.7);
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.ci-entry:last-of-type { margin-bottom: 0; }
+
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.decision-box {
+    border-radius: var(--radius-md);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    line-height: 1.65;
+    border: 2px solid transparent;
+}
 
 /* ----------------------------------------------------------
    7. Animationen
@@ -991,7 +1133,45 @@ body.dark .tab-btn { border-color: rgba(255,255,255,0.12); }
         <h1 class="page-title">A/B Test Auswertung</h1>
         <p class="page-subtitle">Bayesianische Analyse · Beta-Posterior</p>
     </div>
-    <button class="toggle-btn" onclick="toggleMode()">🌗 Dark Mode</button>
+    <div style="display:flex; gap:10px; align-items:center;">
+        <button class="toggle-btn" onclick="openSettings()" title="Einstellungen öffnen">Einstellungen</button>
+        <button class="toggle-btn" onclick="toggleMode()">🌗 Dark Mode</button>
+    </div>
+</div>
+
+<!-- ── Settings-Modal ────────────────────────────────────── -->
+<div id="settingsOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.25); z-index:1000;" onclick="closeSettings(event)">
+    <div id="settingsModal" style="position:absolute; top:72px; right:64px; background:#ffffff; border:1px solid rgba(0,0,0,0.10); border-radius:var(--radius-lg); padding:28px; min-width:320px; box-shadow:0 8px 32px rgba(0,0,0,0.15); color:var(--text-primary);" onclick="event.stopPropagation()">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <span style="font-size:15px; font-weight:600; color:#1c1917;">Einstellungen</span>
+            <button onclick="closeSettings()" style="background:none; border:none; cursor:pointer; font-size:18px; color:#a8a29e; line-height:1; padding:2px 6px;">✕</button>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:14px;">
+            <div class="input-group">
+                <label style="color:#57534e;">Prior α (Alpha)</label>
+                <input type="number" id="priorA" value="1" min="0.1" step="0.1" style="width:100%; background:#f5f5f4; border-color:rgba(0,0,0,0.12); color:#1c1917;">
+            </div>
+            <div class="input-group">
+                <label style="color:#57534e;">Prior β (Beta)</label>
+                <input type="number" id="priorB" value="1" min="0.1" step="0.1" style="width:100%; background:#f5f5f4; border-color:rgba(0,0,0,0.12); color:#1c1917;">
+            </div>
+            <div class="input-group">
+                <label style="color:#57534e;">Entscheidungsgrenze (%)</label>
+                <input type="number" id="threshold" value="95" min="50" max="100" step="1" style="width:100%; background:#f5f5f4; border-color:rgba(0,0,0,0.12); color:#1c1917;">
+            </div>
+            <div class="input-group">
+                <label style="color:#57534e;">Credible Interval (%)</label>
+                <input type="number" id="ciLevel" value="95" min="50" max="99" step="1" style="width:100%; background:#f5f5f4; border-color:rgba(0,0,0,0.12); color:#1c1917;">
+            </div>
+            <div class="input-group">
+                <label style="color:#57534e;">Simulationen</label>
+                <input type="number" id="numSamples" value="50000" min="1000" max="100000" step="1000" style="width:100%; background:#f5f5f4; border-color:rgba(0,0,0,0.12); color:#1c1917;">
+            </div>
+            <p style="font-size:12px; color:#a8a29e; margin-top:2px; line-height:1.5;">
+                Prior α=1, β=1 = uninformativer Prior.<br>Höhere Werte regularisieren zur Mitte.
+            </p>
+        </div>
+    </div>
 </div>
 
 <!-- ── Analyse-Boxen ─────────────────────────────────────────
@@ -1008,40 +1188,7 @@ body.dark .tab-btn { border-color: rgba(255,255,255,0.12); }
     </button>
 </div>
 
-<!-- Erweiterte Einstellungen – außerhalb der Boxen, global -->
-<div class="glass" style="margin-bottom: var(--gap);">
-    <details>
-        <summary style="cursor:pointer; font-weight:500; font-size:14px; color:var(--text-secondary); user-select:none;">
-            ⚙️ Advanced Settings
-        </summary>
-        <div style="margin-top:18px; display:flex; gap:24px; flex-wrap:wrap; align-items:flex-end;">
-            <div class="input-group">
-                <label>Prior α (Alpha)</label>
-                <input type="number" id="priorA" value="1" min="0.1" step="0.1">
-            </div>
-            <div class="input-group">
-                <label>Prior β (Beta)</label>
-                <input type="number" id="priorB" value="1" min="0.1" step="0.1">
-            </div>
-            <div class="input-group">
-                <label>Entscheidungsgrenze (%)</label>
-                <input type="number" id="threshold" value="95" min="50" max="100" step="1">
-            </div>
-            <div class="input-group">
-                <label>Credible Interval (%)</label>
-                <input type="number" id="ciLevel" value="95" min="50" max="99" step="1">
-            </div>
-            <div class="input-group">
-                <label>Simulationen</label>
-                <input type="number" id="numSamples" value="10000" min="1000" max="100000" step="1000">
-            </div>
-        </div>
-        <p class="small-text" style="margin-top:12px; border:none; padding:0;">
-            Prior α=1, β=1 entspricht einem uninformativen (gleichmäßigen) Prior.
-            Höhere Werte ziehen die Posteriors zur Mitte hin (Regularisierung).
-        </p>
-    </details>
-</div>
+<!-- (Advanced Settings wurde als Zahnrad-Modal ins Header verschoben) -->
 
 <!-- ── Globale Fehlermeldung ──────────────────────────────── -->
 <div id="validationAlert" class="alert error" style="margin-bottom: var(--gap);"></div>
@@ -1055,12 +1202,8 @@ body.dark .tab-btn { border-color: rgba(255,255,255,0.12); }
         <div class="spinner"></div>
         <span>Berechne Posterioren…</span>
     </div>
-    <button class="btn btn-ghost" onclick="loadFromURL()" title="Gespeicherte Konfiguration laden">
-        🔗 URL laden
-    </button>
-    <!-- Share-Button – erst nach einer Analyse sichtbar -->
-    <button class="btn btn-ghost" id="shareBtn" onclick="shareURL()" style="display:none;">
-        🔗 Ergebnisse teilen
+    <button class="btn btn-ghost" onclick="saveAsHTML()" title="Aktuelle Eingaben als HTML-Datei speichern">
+        💾 Als HTML speichern
     </button>
 </div>
 
@@ -1122,16 +1265,43 @@ function toggleMode() {
 
 /**
  * Beim Seitenstart:
- *  – URL-Parameter vorhanden → Konfiguration laden
- *  – Sonst → erste Analyse-Box ("Gesamt") mit zwei Standard-Varianten anlegen
+ *  – data-snapshot auf <body> vorhanden → gespeicherten Zustand wiederherstellen
+ *  – Sonst → leere Erstbox ("Gesamt") anlegen
  */
 (function init() {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('v')) {
-        loadFromURL();
-    } else {
-        addAnalysisBox('Gesamt', true); // isMain = true → nicht löschbar
+    const raw = document.body.dataset.snapshot;
+    if (raw) {
+        try {
+            const { snapshot, settings } = JSON.parse(raw);
+            // Einstellungen setzen
+            if (settings) {
+                document.getElementById('priorA').value     = settings.priorA     ?? 1;
+                document.getElementById('priorB').value     = settings.priorB     ?? 1;
+                document.getElementById('threshold').value  = settings.threshold  ?? 95;
+                document.getElementById('ciLevel').value    = settings.ciLevel    ?? 95;
+                document.getElementById('numSamples').value = settings.numSamples ?? 50000;
+            }
+            // Boxen aufbauen
+            snapshot.forEach((boxData, bi) => {
+                const colLabels = boxData.colLabels || null;
+                addAnalysisBox(
+                    boxData.title,
+                    bi === 0,
+                    boxData.variants.map(v => ({
+                        name:        v.name,
+                        visitors:    parseInputNumber(v.visitors)    || 1000,
+                        conversions: parseInputNumber(v.conversions) || 100
+                    })),
+                    colLabels
+                );
+            });
+            return; // fertig
+        } catch(e) {
+            console.warn('Snapshot konnte nicht geladen werden:', e);
+        }
     }
+    // Standard: leere Gesamt-Box
+    addAnalysisBox('Gesamt', true);
 })();
 
 
@@ -1141,47 +1311,31 @@ function toggleMode() {
 
 /**
  * Fügt eine neue Analyse-Box in #analysis-boxes ein.
+ * Beim Anlegen einer Nicht-Haupt-Box werden Namen und Zahlen
+ * aus der ersten Box übernommen (außer explizit anders angegeben).
  *
- * Eine Analyse-Box ist ein eigenständiger Eingabe-Container mit:
- *  – Editierbarem Titel (z. B. "Gesamt", "Elektronik", "Mobile")
- *  – Eigenem Varianten-Container (Control + beliebig viele Test-Varianten)
- *  – Eigenen "+ Variante"-Button und Entfernen-Button
- *
- * Die erste Box (isMain=true) erhält das Badge "Gesamt" und kann
- * nicht entfernt werden. Weitere Boxen erhalten "Segment".
- *
- * @param {string}  title  - Vorausgefüllter Titel
- * @param {boolean} isMain - true → nicht löschbar, Badge "Gesamt"
+ * @param {string}  title    - Vorausgefüllter Titel
+ * @param {boolean} isMain   - true → nicht löschbar, Badge "Gesamt"
+ * @param {Array}   variants - Optionales Array [{name,visitors,conversions}] zum Vorausfüllen
  */
-function addAnalysisBox(title = 'Neues Segment', isMain = false) {
+function addAnalysisBox(title = 'Neues Segment', isMain = false, variants = null, colLabels = null) {
     const container = document.getElementById('analysis-boxes');
     const boxId     = ++boxCounter;
-    const varId     = `variants-${boxId}`; // eindeutiger Container für Varianten
+    const varId     = `variants-${boxId}`;
 
     const box = document.createElement('div');
     box.className      = 'analysis-box';
     box.dataset.boxId  = boxId;
 
     box.innerHTML = `
-        <!-- ── Box-Header: Titel + Badges + Entfernen-Button ── -->
         <div class="analysis-box-header">
-
-            <!--
-                Editierbarer Titel der Box.
-                Sieht wie eine Überschrift aus, ist aber ein <input>.
-                Der Name wird später als Tab-Titel in den Ergebnissen verwendet.
-            -->
             <input type="text"
                    class="inp-box-title"
                    value="${escapeHTML(title)}"
                    placeholder="Name des Segments">
-
-            <!-- Badge: "Gesamt" (erste Box) oder "Segment" (weitere Boxen) -->
             <span class="box-type-badge ${isMain ? 'main' : 'segment'}">
                 ${isMain ? 'Gesamt' : 'Segment'}
             </span>
-
-            <!-- Entfernen-Button (nur bei Nicht-Haupt-Boxen) -->
             ${!isMain
                 ? `<button class="btn-remove-box"
                            onclick="this.closest('.analysis-box').remove()"
@@ -1191,12 +1345,8 @@ function addAnalysisBox(title = 'Neues Segment', isMain = false) {
                 : ''
             }
         </div>
-
-        <!-- ── Varianten-Container ── -->
         <div id="${varId}"></div>
-
-        <!-- ── Aktions-Button: Variante hinzufügen ── -->
-        <div style="margin-top:14px;">
+        <div style="margin-top:12px;">
             <button class="btn btn-ghost"
                     style="font-size:13px;"
                     onclick="addVariantToBox('${varId}')">
@@ -1207,98 +1357,195 @@ function addAnalysisBox(title = 'Neues Segment', isMain = false) {
 
     container.appendChild(box);
 
-    // Standard: Control + erste Test-Variante vorausfüllen
-    addVariantToBox(varId, true,  1000, 100); // Control
-    addVariantToBox(varId, false, 1000, 100); // Variante 1
+    // Spaltenbeschriftungen ermitteln:
+    // 1) Aus Parameter (Snapshot-Laden)
+    // 2) Aus erster Box (beim manuellen Hinzufügen eines Segments)
+    // 3) Default ['Besucher','Conversions']
+    let effectiveColLabels = colLabels;
+    if (!effectiveColLabels && !isMain) {
+        const firstBox = document.querySelector('.analysis-box');
+        if (firstBox) {
+            const hdr = firstBox.querySelector('.variant-col-header');
+            if (hdr) {
+                const cols = hdr.querySelectorAll('.col-label-input');
+                effectiveColLabels = Array.from(cols).map(el => el.value);
+            }
+        }
+    }
+
+    if (variants && variants.length > 0) {
+        variants.forEach((v, i) => {
+            addVariantToBox(varId, i === 0, v.visitors, v.conversions, v.name, effectiveColLabels, i === 0);
+        });
+    } else if (isMain) {
+        addVariantToBox(varId, true,  1000, 100, '', effectiveColLabels, true);
+        addVariantToBox(varId, false, 1000, 100, '', effectiveColLabels, false);
+    } else {
+        const firstBox = document.querySelector('.analysis-box');
+        if (firstBox) {
+            const firstRows = firstBox.querySelectorAll('.variant-row');
+            firstRows.forEach((row, i) => {
+                const name        = row.querySelector('.inp-name')?.value || '';
+                const visitors    = parseInputNumber(row.querySelector('.inp-visitors')?.value) || 1000;
+                const conversions = parseInputNumber(row.querySelector('.inp-conversions')?.value) || 100;
+                addVariantToBox(varId, i === 0, visitors, conversions, name, effectiveColLabels, i === 0);
+            });
+        } else {
+            addVariantToBox(varId, true,  1000, 100, '', effectiveColLabels, true);
+            addVariantToBox(varId, false, 1000, 100, '', effectiveColLabels, false);
+        }
+    }
 }
 
 /**
- * Fügt eine Varianten-Zeile in den Varianten-Container einer Box ein.
+ * Fügt eine Varianten-Zeile als Tabellenzeile ein.
+ * Die erste Zeile (isFirst=true) enthält einen editierbaren Spaltenkopf.
  *
- * Die Zeile enthält:
- *  – Editierbares Namensfeld (.inp-name)
- *  – Besucher- und Conversions-Inputs
- *  – Live-CR-Anzeige
- *  – Entfernen-Button (nur Nicht-Control)
- *
- * @param {string}  varContainerId - ID des Varianten-Containers der Box
- * @param {boolean} isControl      - true → "Control" (nicht löschbar)
- * @param {number}  visitors       - Vorausgefüllte Besucher
- * @param {number}  conversions    - Vorausgefüllte Conversions
- * @param {string}  name           - Vorausgefüllter Name
+ * @param {string}  varContainerId
+ * @param {boolean} isControl
+ * @param {number}  visitors
+ * @param {number}  conversions
+ * @param {string}  name
+ * @param {Array}   colLabels - ['Besucher','Conversions'] oder null für Default
+ * @param {boolean} isFirst   - true = Spaltenkopf-Zeile voranstellen
  */
-function addVariantToBox(varContainerId, isControl = false, visitors = 1000, conversions = 100, name = '') {
-    const container  = document.getElementById(varContainerId);
+function addVariantToBox(varContainerId, isControl = false, visitors = 1000, conversions = 100, name = '', colLabels = null, isFirst = false) {
+    const container   = document.getElementById(varContainerId);
     if (!container) return;
 
-    const index      = container.children.length; // 0 = Control, 1+ = Varianten
-    const color      = VARIANT_COLORS[index % VARIANT_COLORS.length];
+    const index       = container.querySelectorAll('.variant-row').length;
+    const color       = VARIANT_COLORS[index % VARIANT_COLORS.length];
     const defaultName = isControl ? 'Control' : `Variante ${index}`;
     const displayName = name || defaultName;
+    const uid         = `${varContainerId}_${Date.now()}_${index}`;
 
-    // uid: eindeutig pro Varianten-Zeile (für Rate-ID)
-    const uid = `${varContainerId}_${Date.now()}_${index}`;
+    const lbl0 = (colLabels && colLabels[0]) || 'Besucher';
+    const lbl1 = (colLabels && colLabels[1]) || 'Conversions';
+
+    // Spaltenköpfe – nur über der ersten Zeile
+    if (isFirst) {
+        // Eventuell vorhandenen alten Header entfernen
+        const oldHdr = container.querySelector('.variant-col-header');
+        if (oldHdr) oldHdr.remove();
+
+        const hdr = document.createElement('div');
+        hdr.className = 'variant-col-header';
+        hdr.innerHTML = `
+            <div class="col-spacer"></div>
+            <div class="col-spacer-name"></div>
+            <input class="col-label-input" type="text" value="${escapeHTML(lbl0)}" title="Spaltenbeschriftung bearbeiten">
+            <input class="col-label-input" type="text" value="${escapeHTML(lbl1)}" title="Spaltenbeschriftung bearbeiten">
+            <div class="col-spacer-cr">CR / Δ</div>
+        `;
+        container.appendChild(hdr);
+    }
 
     const row = document.createElement('div');
-    row.className      = 'variant-row';
-    row.dataset.uid    = uid;
-    row.dataset.color  = color;
+    row.className     = 'variant-row';
+    row.dataset.uid   = uid;
+    row.dataset.color = color;
+    row.dataset.isControl = isControl ? '1' : '0';
 
     row.innerHTML = `
-        <!-- Farbpunkt -->
         <div class="variant-dot" style="background:${color};"></div>
-
-        <!-- Editierbarer Name -->
-        <input type="text"
-               class="inp-name"
+        <input type="text" class="inp-name"
                value="${escapeHTML(displayName)}"
                placeholder="${escapeHTML(defaultName)}"
                title="Namen bearbeiten">
-
-        <!-- Besucher -->
-        <div class="input-group">
-            <label>Besucher</label>
-            <input type="number" class="inp-visitors" value="${visitors}" min="1"
-                   oninput="updateRate(this.closest('.variant-row'))">
+        <input type="text" inputmode="numeric" class="inp-visitors" value="${visitors}"
+               oninput="updateRate(this.closest('.variant-row'))">
+        <input type="text" inputmode="numeric" class="inp-conversions" value="${conversions}"
+               oninput="updateRate(this.closest('.variant-row'))">
+        <div class="variant-cr-cell">
+            <span class="variant-rate" id="rate-${uid}">${(conversions / visitors * 100).toFixed(2)}%</span>
+            <span class="variant-uplift hidden" id="uplift-${uid}"></span>
         </div>
-
-        <!-- Conversions -->
-        <div class="input-group">
-            <label>Conversions</label>
-            <input type="number" class="inp-conversions" value="${conversions}" min="0"
-                   oninput="updateRate(this.closest('.variant-row'))">
-        </div>
-
-        <!-- Live-CR -->
-        <div class="variant-rate" id="rate-${uid}">
-            ${(conversions / visitors * 100).toFixed(2)}%
-        </div>
-
-        <!-- Entfernen (nur Nicht-Control) -->
         ${!isControl
-            ? `<button class="btn-remove"
-                       onclick="this.closest('.variant-row').remove()"
-                       title="Variante entfernen">✕</button>`
-            : ''
+            ? `<button class="btn-remove" onclick="var c=this.closest('[id^=variants-]');this.closest('.variant-row').remove();refreshAllUplift(c);" title="Variante entfernen">✕</button>`
+            : '<div class="btn-remove-placeholder"></div>'
         }
     `;
 
     container.appendChild(row);
+    refreshAllUplift(container);
 }
 
 /**
- * Berechnet und zeigt die Live-CR einer Varianten-Zeile an.
+ * Parst eine Zahl aus einem Eingabefeld.
+ * Akzeptiert Tausenderpunkte: "1.000" → 1000, "1.234.567" → 1234567.
+ * Kommas als Dezimaltrennzeichen werden ebenfalls unterstützt.
  *
- * @param {HTMLElement} row - Die .variant-row
+ * @param {string} val - Rohwert aus dem Input
+ * @returns {number}
+ */
+function parseInputNumber(val) {
+    if (!val) return NaN;
+    // Entferne Tausenderpunkte (Punkt vor 3 Ziffern), normalisiere Dezimalkomma
+    const cleaned = String(val)
+        .trim()
+        .replace(/\.(?=\d{3}(?:[.,]|$))/g, '') // Tausenderpunkte entfernen
+        .replace(',', '.');                       // Dezimalkomma → Punkt
+    return parseFloat(cleaned);
+}
+
+/**
+ * Aktualisiert CR-Anzeige und Uplift-Badge für eine einzelne Zeile.
  */
 function updateRate(row) {
-    const n      = parseFloat(row.querySelector('.inp-visitors').value)    || 0;
-    const c      = parseFloat(row.querySelector('.inp-conversions').value)  || 0;
+    const n      = parseInputNumber(row.querySelector('.inp-visitors')?.value)   || 0;
+    const c      = parseInputNumber(row.querySelector('.inp-conversions')?.value) || 0;
     const uid    = row.dataset.uid;
     const rateEl = document.getElementById(`rate-${uid}`);
     if (rateEl) {
         rateEl.textContent = n > 0 ? `${(c / n * 100).toFixed(2)}%` : '–';
     }
+    // Uplift aller Zeilen im selben Container aktualisieren
+    const container = row.parentElement;
+    if (container) refreshAllUplift(container);
+}
+
+/**
+ * Berechnet und aktualisiert den Uplift-Chip aller Varianten-Zeilen
+ * relativ zur ersten Zeile (Control) desselben Containers.
+ *
+ * @param {HTMLElement} container - Der Varianten-Container (.id starts with "variants-")
+ */
+function refreshAllUplift(container) {
+    if (!container) return;
+    const rows = container.querySelectorAll('.variant-row');
+    if (rows.length < 1) return;
+
+    // Control-Rate aus erster Zeile
+    const cn = parseInputNumber(rows[0].querySelector('.inp-visitors')?.value)   || 0;
+    const cc = parseInputNumber(rows[0].querySelector('.inp-conversions')?.value) || 0;
+    const controlRate = cn > 0 ? cc / cn : 0;
+
+    rows.forEach((row, i) => {
+        const uid      = row.dataset.uid;
+        const upliftEl = document.getElementById(`uplift-${uid}`);
+        if (!upliftEl) return;
+
+        if (i === 0) {
+            // Control: kein Uplift-Badge
+            upliftEl.className = 'variant-uplift hidden';
+            upliftEl.textContent = '';
+            return;
+        }
+
+        const n = parseInputNumber(row.querySelector('.inp-visitors')?.value)   || 0;
+        const c = parseInputNumber(row.querySelector('.inp-conversions')?.value) || 0;
+        if (n <= 0 || controlRate === 0) {
+            upliftEl.className = 'variant-uplift hidden';
+            return;
+        }
+
+        const rate   = c / n;
+        const uplift = (rate - controlRate) / controlRate;
+        const pct    = (uplift * 100).toFixed(1);
+        const sign   = uplift > 0 ? '+' : '';
+        upliftEl.textContent = `${sign}${pct}%`;
+        upliftEl.className   = `variant-uplift ${uplift > 0 ? 'pos' : uplift < 0 ? 'neg' : 'hidden'}`;
+    });
 }
 
 
@@ -1364,8 +1611,8 @@ function parseAndValidate() {
             const nInput    = row.querySelector('.inp-visitors');
             const cInput    = row.querySelector('.inp-conversions');
             const nameInput = row.querySelector('.inp-name');
-            const n         = parseInt(nInput.value, 10);
-            const c         = parseInt(cInput.value, 10);
+            const n         = parseInputNumber(nInput.value);
+            const c         = parseInputNumber(cInput.value);
 
             // Custom-Name mit Fallback
             const defaultLabel = i === 0 ? 'Control' : `Variante ${i}`;
@@ -1418,90 +1665,92 @@ function showAlert(msg) {
 
 
 // ============================================================
-// E. URL-STATE (TEILEN / LADEN)
+// E. EINSTELLUNGS-MODAL & HTML-EXPORT
 // ============================================================
 
-/**
- * Serialisiert alle Analyse-Boxen in die URL.
- *
- * Format: ?boxes=title~varName|n,c;varName|n,c&boxes=...&pa=1&...
- * Jede Box ist ein eigener "boxes"-Parameter.
- * Varianten innerhalb einer Box sind durch ";" getrennt.
- * Format einer Variante: "encodedName|visitors,conversions"
- */
-function shareURL() {
-    const boxes  = document.querySelectorAll('.analysis-box');
-    const params = new URLSearchParams();
-
-    boxes.forEach(box => {
-        const title = box.querySelector('.inp-box-title')?.value || '';
-        const rows  = box.querySelectorAll('.variant-row');
-        const varParts = [];
-
-        rows.forEach(row => {
-            const name = encodeURIComponent(row.querySelector('.inp-name')?.value || '');
-            const n    = row.querySelector('.inp-visitors').value;
-            const c    = row.querySelector('.inp-conversions').value;
-            varParts.push(`${name}|${n},${c}`);
-        });
-
-        params.append('box', `${encodeURIComponent(title)}~${varParts.join(';')}`);
-    });
-
-    params.set('pa',  document.getElementById('priorA').value);
-    params.set('pb',  document.getElementById('priorB').value);
-    params.set('thr', document.getElementById('threshold').value);
-    params.set('ci',  document.getElementById('ciLevel').value);
-
-    const url = `${location.origin}${location.pathname}?${params}`;
-    navigator.clipboard.writeText(url)
-        .then(() => alert('Link in die Zwischenablage kopiert!'))
-        .catch(() => prompt('Link kopieren:', url));
+/** Öffnet das Einstellungs-Modal. */
+function openSettings() {
+    document.getElementById('settingsOverlay').style.display = 'block';
 }
 
+/** Schließt das Einstellungs-Modal (auch bei Klick auf Backdrop). */
+function closeSettings(event) {
+    if (!event || event.target === document.getElementById('settingsOverlay')) {
+        document.getElementById('settingsOverlay').style.display = 'none';
+    }
+}
+
+// Schließen mit Escape-Taste
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeSettings();
+});
+
 /**
- * Liest URL-Parameter ein und baut die Analyse-Boxen neu auf.
- * Versteht das neue Mehrfach-Box-Format.
+ * Speichert die aktuelle Konfiguration als eigenständige HTML-Datei.
+ *
+ * Technik: Den aktuellen DOM-Quelltext laden, den Snapshot als JSON
+ * in ein data-Attribut auf <body> einbetten, und in der init()-Funktion
+ * dieses Attribut auslesen. So läuft init() genau einmal und verzweigt
+ * je nach Vorhandensein des Snapshots.
  */
-function loadFromURL() {
-    const p = new URLSearchParams(window.location.search);
-    if (!p.has('box')) { showAlert('Keine gültigen URL-Parameter gefunden.'); return; }
+function saveAsHTML() {
+    const boxes = document.querySelectorAll('.analysis-box');
+    const snapshot = [];
 
-    // Bestehende Boxen entfernen
-    document.getElementById('analysis-boxes').innerHTML = '';
-    boxCounter = 0;
+    boxes.forEach((box, bi) => {
+        const title  = box.querySelector('.inp-box-title')?.value || '';
+        const isMain = bi === 0;
+        const rows   = box.querySelectorAll('.variant-row');
+        const varData = [];
+        // Spaltenbeschriftungen aus Header
+        const hdr = box.querySelector('.variant-col-header');
+        const colInputs = hdr ? hdr.querySelectorAll('.col-label-input') : [];
+        const colLabels = colInputs.length >= 2
+            ? [colInputs[0].value, colInputs[1].value]
+            : ['Besucher', 'Conversions'];
 
-    const boxStrings = p.getAll('box');
-    boxStrings.forEach((boxStr, bi) => {
-        const tildeIdx = boxStr.indexOf('~');
-        const title    = decodeURIComponent(boxStr.slice(0, tildeIdx));
-        const varStr   = boxStr.slice(tildeIdx + 1);
-
-        addAnalysisBox(title, bi === 0);
-
-        // Varianten-Container der zuletzt hinzugefügten Box
-        const boxes    = document.querySelectorAll('.analysis-box');
-        const lastBox  = boxes[boxes.length - 1];
-        const varCont  = lastBox.querySelector('[id^="variants-"]');
-        if (!varCont) return;
-
-        // Standard-Varianten entfernen (addAnalysisBox hat schon 2 angelegt)
-        varCont.innerHTML = '';
-
-        const varParts = varStr.split(';');
-        varParts.forEach((vPart, vi) => {
-            const pipeIdx = vPart.indexOf('|');
-            const vName   = pipeIdx >= 0 ? decodeURIComponent(vPart.slice(0, pipeIdx)) : '';
-            const rest    = pipeIdx >= 0 ? vPart.slice(pipeIdx + 1) : vPart;
-            const [vN, vC] = rest.split(',').map(Number);
-            addVariantToBox(varCont.id, vi === 0, vN || 1000, vC || 100, vName);
+        rows.forEach((row, ri) => {
+            varData.push({
+                name:        row.querySelector('.inp-name')?.value || '',
+                visitors:    row.querySelector('.inp-visitors')?.value  || '1000',
+                conversions: row.querySelector('.inp-conversions')?.value || '100',
+                isControl:   ri === 0
+            });
         });
+        snapshot.push({ title, isMain, colLabels, variants: varData });
     });
 
-    if (p.has('pa'))  document.getElementById('priorA').value    = p.get('pa');
-    if (p.has('pb'))  document.getElementById('priorB').value    = p.get('pb');
-    if (p.has('thr')) document.getElementById('threshold').value = p.get('thr');
-    if (p.has('ci'))  document.getElementById('ciLevel').value   = p.get('ci');
+    const settings = {
+        priorA:     document.getElementById('priorA').value,
+        priorB:     document.getElementById('priorB').value,
+        threshold:  document.getElementById('threshold').value,
+        ciLevel:    document.getElementById('ciLevel').value,
+        numSamples: document.getElementById('numSamples').value
+    };
+
+    const payload = JSON.stringify({ snapshot, settings });
+
+    // Snapshot als data-Attribut auf <body> einbetten
+    let html = document.documentElement.outerHTML;
+    // Vorhandene data-snapshot-Attribute entfernen
+    html = html.replace(/ data-snapshot="[^"]*"/, '');
+    // Neues Attribut einfügen
+    html = html.replace('<body class="', `<body data-snapshot="${escapeAttr(payload)}" class="`);
+
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href     = url;
+    link.download = `ab_test_${new Date().toISOString().slice(0,10)}.html`;
+    link.click();
+    URL.revokeObjectURL(url);
+}
+
+/** Escapet einen String für sicheres Einbetten in ein HTML-Attribut. */
+function escapeAttr(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;');
 }
 
 
@@ -1782,7 +2031,6 @@ async function runTest() {
     // 2. UI-Feedback
     document.getElementById('spinner').classList.add('active');
     document.getElementById('results').innerHTML = '';
-    document.getElementById('shareBtn').style.display = 'none';
 
     const numSamples = Math.min(100000, Math.max(1000,
         parseInt(document.getElementById('numSamples').value, 10) || 10000));
@@ -1929,7 +2177,6 @@ function renderResults(data) {
         renderAnalysisInto(container, boxResults[0].stats, boxResults[0].posteriors, threshold, ciLevel);
     }
 
-    document.getElementById('shareBtn').style.display = 'inline-flex';
 }
 
 /**
@@ -2120,7 +2367,67 @@ function renderProbabilities(container, stats, threshold) {
     const wrapper = document.createElement('div');
     wrapper.className = 'grid-2';
 
-    // --- Links: Probability to be Best ---
+    // --- Links: Prob. to beat Baseline (kommt zuerst) ---
+    const basePanel = createPanel('result-panel');
+    basePanel.innerHTML = `
+        <div class="section-title">
+            Prob. to beat Baseline
+            <span class="tooltip-wrap">
+                <span class="tooltip-icon">i</span>
+                <span class="tooltip-box">Wahrscheinlichkeit, dass diese Variante eine höhere wahre Conversion Rate als die Control-Gruppe hat. Gilt nur für Test-Varianten.</span>
+            </span>
+        </div>
+    `;
+
+    stats.forEach((s, i) => {
+        const entry = document.createElement('div');
+        entry.className = 'ci-entry';
+
+        if (i === 0) {
+            // Control-Platzhalter – gleiche Höhe wie Variantenzeile
+            entry.style.cssText = 'opacity:0.45;';
+            entry.innerHTML = `
+                <div style="width:100%;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <span class="variant-badge" style="background:${hexToRgba(s.color,0.10)};color:${s.color};">
+                            ${escapeHTML(s.label)}
+                        </span>
+                        <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--text-muted);">Baseline</span>
+                    </div>
+                    <div class="prob-bar-wrap">
+                        <div class="prob-bar" style="width:0%; background:${s.color};"></div>
+                    </div>
+                    <div style="margin-top:5px; font-size:12px; color:var(--text-muted);">–</div>
+                </div>
+            `;
+        } else {
+            const pct   = (s.probVsControl * 100).toFixed(1);
+            const isWin = s.probVsControl >= threshold;
+            entry.innerHTML = `
+                <div style="width:100%;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <span class="variant-badge" style="background:${hexToRgba(s.color,0.10)};color:${s.color};">
+                            ${escapeHTML(s.label)}
+                        </span>
+                        <span style="font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:14px; color:${isWin ? 'var(--success)' : 'var(--text-primary)'};">
+                            ${pct}%${isWin ? ' ✓' : ''}
+                        </span>
+                    </div>
+                    <div class="prob-bar-wrap">
+                        <div class="prob-bar" style="width:${pct}%; background:${s.color};"></div>
+                    </div>
+                    <div style="margin-top:5px; font-size:12px; color:var(--text-muted);">
+                        Uplift: ${formatUplift(s.uplift)}
+                    </div>
+                </div>
+            `;
+        }
+        basePanel.appendChild(entry);
+    });
+
+    basePanel.innerHTML += `<div class="small-text">Direkter Vergleich jeder Variante mit Control. Unabhängig von anderen Varianten.</div>`;
+
+    // --- Rechts: Probability to be Best ---
     const bestPanel = createPanel('result-panel');
     bestPanel.innerHTML = `
         <div class="section-title">
@@ -2141,68 +2448,26 @@ function renderProbabilities(container, stats, threshold) {
         entry.innerHTML = `
             <div style="width:100%;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                    <span class="variant-badge" style="background:${hexToRgba(s.color,0.12)};color:${s.color};">
+                    <span class="variant-badge" style="background:${hexToRgba(s.color,0.10)};color:${s.color};">
                         ${escapeHTML(s.label)}
                     </span>
-                    <span style="font-family:'Fira Code',monospace; font-weight:600; font-size:15px; color:${isAboveThreshold ? 'var(--success)' : 'var(--text-primary)'};">
-                        ${pct}%
-                        ${isAboveThreshold ? '✓' : ''}
+                    <span style="font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:14px; color:${isAboveThreshold ? 'var(--success)' : 'var(--text-primary)'};">
+                        ${pct}%${isAboveThreshold ? ' ✓' : ''}
                     </span>
                 </div>
                 <div class="prob-bar-wrap">
                     <div class="prob-bar" style="width:${pct}%; background:${s.color};"></div>
                 </div>
+                <div style="margin-top:5px; font-size:12px; color:var(--text-muted);">&nbsp;</div>
             </div>
         `;
         bestPanel.appendChild(entry);
     });
 
-    bestPanel.innerHTML += `<div class="small-text">Entscheidungsgrenze: ${(threshold*100).toFixed(0)}% – Varianten, die diese Schwelle überschreiten (✓), gelten als statistisch aussagekräftig.</div>`;
+    bestPanel.innerHTML += `<div class="small-text">Entscheidungsgrenze: ${(threshold*100).toFixed(0)}% – Varianten mit ✓ sind statistisch aussagekräftig.</div>`;
 
-    // --- Rechts: Probability to beat Baseline ---
-    const basePanel = createPanel('result-panel');
-    basePanel.innerHTML = `
-        <div class="section-title">
-            Prob. to beat Baseline
-            <span class="tooltip-wrap">
-                <span class="tooltip-icon">i</span>
-                <span class="tooltip-box">Wahrscheinlichkeit, dass diese Variante eine höhere wahre Conversion Rate als die Control-Gruppe hat. Gilt nur für Test-Varianten.</span>
-            </span>
-        </div>
-    `;
-
-    stats.forEach((s, i) => {
-        if (i === 0) return; // Control überspringen
-        const pct     = (s.probVsControl * 100).toFixed(1);
-        const isWin   = s.probVsControl >= threshold;
-
-        const entry = document.createElement('div');
-        entry.className = 'ci-entry';
-        entry.innerHTML = `
-            <div style="width:100%;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                    <span class="variant-badge" style="background:${hexToRgba(s.color,0.12)};color:${s.color};">
-                        ${escapeHTML(s.label)}
-                    </span>
-                    <span style="font-family:'Fira Code',monospace; font-weight:600; font-size:15px; color:${isWin ? 'var(--success)' : 'var(--text-primary)'};">
-                        ${pct}% ${isWin ? '✓' : ''}
-                    </span>
-                </div>
-                <div class="prob-bar-wrap">
-                    <div class="prob-bar" style="width:${pct}%; background:${s.color};"></div>
-                </div>
-                <div style="margin-top:6px; font-size:12px; color:var(--text-muted);">
-                    Uplift: ${formatUplift(s.uplift)}
-                </div>
-            </div>
-        `;
-        basePanel.appendChild(entry);
-    });
-
-    basePanel.innerHTML += `<div class="small-text">Vergleich jeder Test-Variante direkt mit dem Control. Unabhängig von anderen Varianten.</div>`;
-
-    wrapper.appendChild(bestPanel);
     wrapper.appendChild(basePanel);
+    wrapper.appendChild(bestPanel);
     container.appendChild(wrapper);
 }
 
@@ -2325,52 +2590,64 @@ function renderExpectedLoss(container, stats) {
 // J.6 Entscheidungsempfehlung
 // ------------------------------------------------------------
 /**
- * Rendert die finale Empfehlungsbox in Grün / Gelb / Rot,
- * abhängig von Gewinnwahrscheinlichkeit und Expected Loss.
+ * Rendert die finale Entscheidungsempfehlung.
+ *
+ * Stufen:
+ *  ✅ Grün   – probBest >= threshold (Entscheidung möglich)
+ *  ⏳ Gelb   – probBest >= 0.75 aber < threshold (Tendenz erkennbar)
+ *  🔍 Rot    – probBest < 0.75 (keine klare Aussage)
+ *
+ * Hinweis: Der Expected Loss wird zusätzlich informativ angezeigt,
+ * ist aber KEIN Gating-Kriterium für die Grün/Gelb-Einstufung.
  */
 function renderDecision(container, stats, threshold) {
-    const maxProbBest   = Math.max(...stats.map(s => s.probBest));
-    const winnerIdx     = stats.findIndex(s => s.probBest === maxProbBest);
-    const winner        = stats[winnerIdx];
-    const minLoss       = Math.min(...stats.map(s => s.loss));
+    const maxProbBest = Math.max(...stats.map(s => s.probBest));
+    const winnerIdx   = stats.findIndex(s => s.probBest === maxProbBest);
+    const winner      = stats[winnerIdx];
+    const minLoss     = Math.min(...stats.map(s => s.loss));
+    const safeLabel   = escapeHTML(winner.label);
+    const threshPct   = (threshold * 100).toFixed(0);
+    const probPct     = (maxProbBest * 100).toFixed(1);
+    const lossPct     = (minLoss * 100).toFixed(3);
 
-    // Entscheidungslogik – drei Stufen
     let type, icon, title, body;
-    // winner.label aus Nutzereingabe → wird in innerHTML injiziert → escapen
-    const safeLabel = escapeHTML(winner.label);
 
-    if (maxProbBest >= threshold && minLoss < 0.0001) {
+    if (maxProbBest >= threshold) {
+        // Klare Entscheidung – Schwelle überschritten
         type  = 'success';
         icon  = '✅';
         title = `Empfehlung: ${safeLabel} einführen`;
         body  = `
             <b>${safeLabel}</b> hat eine Gewinnwahrscheinlichkeit von
-            <b>${(maxProbBest * 100).toFixed(1)}%</b> – über der gesetzten Entscheidungsgrenze von
-            ${(threshold * 100).toFixed(0)}%.<br><br>
-            Der Expected Loss beträgt <b>${(minLoss * 100).toFixed(3)}%</b> – selbst im unwahrscheinlichen
-            Fehlerfall wäre der Performance-Verlust vernachlässigbar.<br><br>
+            <b>${probPct}%</b> und überschreitet damit die Entscheidungsgrenze von ${threshPct}%.<br><br>
+            Expected Loss: <b>${lossPct}%</b>${minLoss < 0.0005
+                ? ' – vernachlässigbar.'
+                : ' – bitte einschätzen, ob dieser Wert für Ihren Anwendungsfall akzeptabel ist.'
+            }<br><br>
             Relativer Uplift vs. Control:
-            <b>${winner.uplift !== null ? formatUplift(winner.uplift) : 'Control'}</b>
+            <b>${winner.uplift !== null ? formatUplift(winner.uplift) : 'ist Control'}</b>
         `;
     } else if (maxProbBest >= 0.75) {
+        // Tendenz erkennbar, Schwelle noch nicht erreicht
         type  = 'warning';
         icon  = '⏳';
         title = `Tendenz: ${safeLabel} führt – Test fortsetzen`;
         body  = `
-            <b>${safeLabel}</b> liegt vorne mit ${(maxProbBest * 100).toFixed(1)}% Gewinnwahrscheinlichkeit,
-            hat aber die Entscheidungsgrenze von ${(threshold * 100).toFixed(0)}% noch nicht erreicht.<br><br>
-            Expected Loss: <b>${(minLoss * 100).toFixed(3)}%</b> – noch nicht gering genug
-            für eine sichere Entscheidung.<br><br>
-            Empfehlung: Weitere Daten sammeln, um die Unsicherheit zu reduzieren.
+            <b>${safeLabel}</b> liegt vorne mit <b>${probPct}%</b> Gewinnwahrscheinlichkeit,
+            hat aber die Entscheidungsgrenze von ${threshPct}% noch nicht erreicht
+            (Differenz: ${(threshold * 100 - maxProbBest * 100).toFixed(1)} Prozentpunkte).<br><br>
+            Expected Loss: <b>${lossPct}%</b><br><br>
+            Empfehlung: Weitere Daten sammeln.
         `;
     } else {
+        // Keine Aussage möglich
         type  = 'danger';
         icon  = '🔍';
         title = 'Keine klare Entscheidung möglich';
         body  = `
-            Keine Variante überschreitet die Entscheidungsgrenze von ${(threshold * 100).toFixed(0)}%.
-            Der geringste Expected Loss liegt bei <b>${(minLoss * 100).toFixed(3)}%</b>,
-            was noch erhebliche Unsicherheit anzeigt.<br><br>
+            Keine Variante überschreitet die Entscheidungsgrenze von ${threshPct}%.
+            Die höchste Gewinnwahrscheinlichkeit liegt bei ${probPct}%.<br><br>
+            Expected Loss: <b>${lossPct}%</b><br><br>
             Empfehlung: Mehr Daten sammeln oder den Test neu aufsetzen.
         `;
     }
@@ -2390,40 +2667,45 @@ function renderDecision(container, stats, threshold) {
 // ============================================================
 
 /**
- * Exportiert alle Analyse-Boxen als CSV.
- * Jede Box wird als separater Block mit dem Box-Titel als "Segment"-Spalte exportiert.
+ * Exportiert alle Analyse-Boxen als CSV im deutschen Format:
+ *  – Semikolon als Spaltentrennzeichen (Excel-DE-Standard)
+ *  – Komma als Dezimaltrennzeichen
  */
 function exportCSV() {
     if (!lastResults) return;
 
     const { boxResults, ciLevel } = lastResults;
-    const ci = (ciLevel * 100).toFixed(0);
+    const ci  = (ciLevel * 100).toFixed(0);
+    const sep = ';';
+    const de  = v => String(v).replace('.', ',');
 
     const headers = [
         'Analyse', 'Variante', 'Besucher', 'Conversions', 'Conversion Rate (%)',
-        'Relativer Uplift (%)', 'Prob. to be Best (%)', 'Prob. vs. Control (%)',
+        'Relativer Uplift (%)', 'Prob. to beat Baseline (%)', 'Prob. to be Best (%)',
         `HDI Lower ${ci}% (%)`, 'Median (%)', `HDI Upper ${ci}% (%)`,
         'Expected Loss (%)'
     ];
 
-    const allRows = boxResults.flatMap(box =>
-        box.stats.map(s => [
+    const sections = boxResults.map(box => {
+        const dataRows = box.stats.map(s => [
             box.title,
             s.label,
             s.n,
             s.c,
-            (s.rate * 100).toFixed(3),
-            s.uplift !== null ? (s.uplift * 100).toFixed(2) : 'Baseline',
-            (s.probBest * 100).toFixed(2),
-            s.probVsControl !== null ? (s.probVsControl * 100).toFixed(2) : 'Baseline',
-            (s.hdiLower * 100).toFixed(3),
-            (s.median * 100).toFixed(3),
-            (s.hdiUpper * 100).toFixed(3),
-            (s.loss * 100).toFixed(4)
-        ])
-    );
+            de((s.rate * 100).toFixed(3)),
+            s.uplift !== null ? de((s.uplift * 100).toFixed(2)) : 'Baseline',
+            s.probVsControl !== null ? de((s.probVsControl * 100).toFixed(2)) : 'Baseline',
+            de((s.probBest * 100).toFixed(2)),
+            de((s.hdiLower * 100).toFixed(3)),
+            de((s.median * 100).toFixed(3)),
+            de((s.hdiUpper * 100).toFixed(3)),
+            de((s.loss * 100).toFixed(4))
+        ]);
+        return [headers, ...dataRows].map(r => r.join(sep)).join('\n');
+    });
 
-    const csv  = [headers, ...allRows].map(r => r.join(',')).join('\n');
+    const bom = '\uFEFF';
+    const csv = bom + sections.join('\n\n'); // leere Zeile zwischen Boxen
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url  = URL.createObjectURL(blob);
     const link = document.createElement('a');
