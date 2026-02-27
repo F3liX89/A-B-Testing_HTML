@@ -1688,12 +1688,16 @@ document.addEventListener('keydown', e => {
 /**
  * Speichert die aktuelle Konfiguration als eigenständige HTML-Datei.
  *
- * Technik: Den aktuellen DOM-Quelltext laden, den Snapshot als JSON
- * in ein data-Attribut auf <body> einbetten, und in der init()-Funktion
- * dieses Attribut auslesen. So läuft init() genau einmal und verzweigt
- * je nach Vorhandensein des Snapshots.
+ * Vorgehen:
+ *  1. Aktuellen Zustand (Box-Titel, Varianten, Einstellungen) als JSON erfassen.
+ *  2. Den HTML-Quelltext der ORIGINALEN Seite nehmen – dabei die dynamisch
+ *     erzeugten Container (#analysis-boxes, #results) leeren, damit beim
+ *     Öffnen der gespeicherten Datei kein doppelter DOM entsteht.
+ *  3. Den Snapshot als data-Attribut auf <body> einbetten.
+ *  4. init() liest dieses Attribut beim Start und baut alles neu auf.
  */
 function saveAsHTML() {
+    // ── 1. Zustand serialisieren ────────────────────────────
     const boxes = document.querySelectorAll('.analysis-box');
     const snapshot = [];
 
@@ -1701,18 +1705,18 @@ function saveAsHTML() {
         const title  = box.querySelector('.inp-box-title')?.value || '';
         const isMain = bi === 0;
         const rows   = box.querySelectorAll('.variant-row');
-        const varData = [];
-        // Spaltenbeschriftungen aus Header
-        const hdr = box.querySelector('.variant-col-header');
+
+        const hdr       = box.querySelector('.variant-col-header');
         const colInputs = hdr ? hdr.querySelectorAll('.col-label-input') : [];
         const colLabels = colInputs.length >= 2
             ? [colInputs[0].value, colInputs[1].value]
             : ['Besucher', 'Conversions'];
 
+        const varData = [];
         rows.forEach((row, ri) => {
             varData.push({
-                name:        row.querySelector('.inp-name')?.value || '',
-                visitors:    row.querySelector('.inp-visitors')?.value  || '1000',
+                name:        row.querySelector('.inp-name')?.value        || '',
+                visitors:    row.querySelector('.inp-visitors')?.value    || '1000',
                 conversions: row.querySelector('.inp-conversions')?.value || '100',
                 isControl:   ri === 0
             });
@@ -1728,20 +1732,40 @@ function saveAsHTML() {
         numSamples: document.getElementById('numSamples').value
     };
 
+    // ── 2. Sauberes HTML-Skelett erzeugen ───────────────────
+    // Dynamisch erzeugte Inhalte temporär leeren, damit outerHTML
+    // keine doppelten Eingabefelder oder Ergebnis-Panels enthält.
+    const analysisBoxesEl = document.getElementById('analysis-boxes');
+    const resultsEl       = document.getElementById('results');
+    const savedBoxes      = analysisBoxesEl.innerHTML;
+    const savedResults    = resultsEl.innerHTML;
+    const savedSnapshot   = document.body.dataset.snapshot || '';
+
+    analysisBoxesEl.innerHTML = '';
+    resultsEl.innerHTML       = '';
+    delete document.body.dataset.snapshot;
+
+    // ── 3. Snapshot einbetten ───────────────────────────────
     const payload = JSON.stringify({ snapshot, settings });
+    document.body.dataset.snapshot = payload;
 
-    // Snapshot als data-Attribut auf <body> einbetten
-    let html = document.documentElement.outerHTML;
-    // Vorhandene data-snapshot-Attribute entfernen
-    html = html.replace(/ data-snapshot="[^"]*"/, '');
-    // Neues Attribut einfügen
-    html = html.replace('<body class="', `<body data-snapshot="${escapeAttr(payload)}" class="`);
+    const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
 
+    // DOM wiederherstellen (Benutzer sieht nichts davon)
+    analysisBoxesEl.innerHTML  = savedBoxes;
+    resultsEl.innerHTML        = savedResults;
+    if (savedSnapshot) {
+        document.body.dataset.snapshot = savedSnapshot;
+    } else {
+        delete document.body.dataset.snapshot;
+    }
+
+    // ── 4. Download triggern ────────────────────────────────
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const url  = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href     = url;
-    link.download = `ab_test_${new Date().toISOString().slice(0,10)}.html`;
+    link.download = `ab_test_${new Date().toISOString().slice(0, 10)}.html`;
     link.click();
     URL.revokeObjectURL(url);
 }
