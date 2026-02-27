@@ -1272,30 +1272,36 @@ function toggleMode() {
     const raw = document.body.dataset.snapshot;
     if (raw) {
         try {
-            const { snapshot, settings } = JSON.parse(raw);
+            const parsed = JSON.parse(raw);
+            // Strukturvalidierung: snapshot muss Array sein, settings ein Objekt
+            if (!Array.isArray(parsed.snapshot) || typeof parsed.settings !== 'object') {
+                throw new Error('Ungültige Snapshot-Struktur');
+            }
+            const { snapshot, settings } = parsed;
             // Einstellungen setzen
             if (settings) {
-                document.getElementById('priorA').value     = settings.priorA     ?? 1;
-                document.getElementById('priorB').value     = settings.priorB     ?? 1;
-                document.getElementById('threshold').value  = settings.threshold  ?? 95;
-                document.getElementById('ciLevel').value    = settings.ciLevel    ?? 95;
-                document.getElementById('numSamples').value = settings.numSamples ?? 50000;
+                document.getElementById('priorA').value     = +settings.priorA     || 1;
+                document.getElementById('priorB').value     = +settings.priorB     || 1;
+                document.getElementById('threshold').value  = +settings.threshold  || 95;
+                document.getElementById('ciLevel').value    = +settings.ciLevel    || 95;
+                document.getElementById('numSamples').value = +settings.numSamples || 50000;
             }
-            // Boxen aufbauen
-            snapshot.forEach((boxData, bi) => {
-                const colLabels = boxData.colLabels || null;
+            // Boxen aufbauen – max. 20 Boxen, max. 10 Varianten pro Box
+            snapshot.slice(0, 20).forEach((boxData, bi) => {
+                if (!Array.isArray(boxData.variants)) return;
+                const colLabels = Array.isArray(boxData.colLabels) ? boxData.colLabels : null;
                 addAnalysisBox(
-                    boxData.title,
+                    String(boxData.title || '').slice(0, 100),
                     bi === 0,
-                    boxData.variants.map(v => ({
-                        name:        v.name,
+                    boxData.variants.slice(0, 10).map(v => ({
+                        name:        String(v.name        || '').slice(0, 100),
                         visitors:    parseInputNumber(v.visitors)    || 1000,
                         conversions: parseInputNumber(v.conversions) || 100
                     })),
                     colLabels
                 );
             });
-            return; // fertig
+            return;
         } catch(e) {
             console.warn('Snapshot konnte nicht geladen werden:', e);
         }
@@ -1336,26 +1342,23 @@ function addAnalysisBox(title = 'Neues Segment', isMain = false, variants = null
             <span class="box-type-badge ${isMain ? 'main' : 'segment'}">
                 ${isMain ? 'Gesamt' : 'Segment'}
             </span>
-            ${!isMain
-                ? `<button class="btn-remove-box"
-                           onclick="this.closest('.analysis-box').remove()"
-                           title="Diese Analyse-Box entfernen">
-                       ✕ Entfernen
-                   </button>`
-                : ''
-            }
+            ${!isMain ? '<button class="btn-remove-box" title="Diese Analyse-Box entfernen">✕ Entfernen</button>' : ''}
         </div>
         <div id="${varId}"></div>
         <div style="margin-top:12px;">
-            <button class="btn btn-ghost"
-                    style="font-size:13px;"
-                    onclick="addVariantToBox('${varId}')">
+            <button class="btn btn-ghost btn-add-variant" style="font-size:13px;">
                 + Variante hinzufügen
             </button>
         </div>
     `;
 
     container.appendChild(box);
+
+    // Event-Listener nach dem Einfügen setzen – kein inline-onclick
+    if (!isMain) {
+        box.querySelector('.btn-remove-box').addEventListener('click', () => box.remove());
+    }
+    box.querySelector('.btn-add-variant').addEventListener('click', () => addVariantToBox(varId));
 
     // Spaltenbeschriftungen ermitteln:
     // 1) Aus Parameter (Snapshot-Laden)
@@ -1452,19 +1455,28 @@ function addVariantToBox(varContainerId, isControl = false, visitors = 1000, con
                value="${escapeHTML(displayName)}"
                placeholder="${escapeHTML(defaultName)}"
                title="Namen bearbeiten">
-        <input type="text" inputmode="numeric" class="inp-visitors" value="${visitors}"
-               oninput="updateRate(this.closest('.variant-row'))">
-        <input type="text" inputmode="numeric" class="inp-conversions" value="${conversions}"
-               oninput="updateRate(this.closest('.variant-row'))">
+        <input type="text" inputmode="numeric" class="inp-visitors" value="${visitors}">
+        <input type="text" inputmode="numeric" class="inp-conversions" value="${conversions}">
         <div class="variant-cr-cell">
             <span class="variant-rate" id="rate-${uid}">${(conversions / visitors * 100).toFixed(2)}%</span>
             <span class="variant-uplift hidden" id="uplift-${uid}"></span>
         </div>
-        ${!isControl
-            ? `<button class="btn-remove" onclick="var c=this.closest('[id^=variants-]');this.closest('.variant-row').remove();refreshAllUplift(c);" title="Variante entfernen">✕</button>`
-            : '<div class="btn-remove-placeholder"></div>'
-        }
+        ${!isControl ? '<button class="btn-remove" title="Variante entfernen">✕</button>' : '<div class="btn-remove-placeholder"></div>'}
     `;
+
+    // Event-Listener via addEventListener (kein inline-onclick)
+    row.querySelector('.inp-visitors').addEventListener('input',
+        () => updateRate(row));
+    row.querySelector('.inp-conversions').addEventListener('input',
+        () => updateRate(row));
+
+    if (!isControl) {
+        row.querySelector('.btn-remove').addEventListener('click', () => {
+            const c = row.closest('[id^="variants-"]');
+            row.remove();
+            refreshAllUplift(c);
+        });
+    }
 
     container.appendChild(row);
     refreshAllUplift(container);
@@ -1480,9 +1492,9 @@ function addVariantToBox(varContainerId, isControl = false, visitors = 1000, con
  */
 function parseInputNumber(val) {
     if (!val) return NaN;
-    // Entferne Tausenderpunkte (Punkt vor 3 Ziffern), normalisiere Dezimalkomma
-    const cleaned = String(val)
-        .trim()
+    // Eingabelänge begrenzen um ReDoS zu verhindern
+    const raw = String(val).trim().slice(0, 20);
+    const cleaned = raw
         .replace(/\.(?=\d{3}(?:[.,]|$))/g, '') // Tausenderpunkte entfernen
         .replace(',', '.');                       // Dezimalkomma → Punkt
     return parseFloat(cleaned);
@@ -1602,6 +1614,10 @@ function parseAndValidate() {
 
         if (rows.length < 2) {
             errorMsg = `"${title}": Bitte mindestens 2 Varianten (Control + eine Test-Variante) eingeben.`;
+            return;
+        }
+        if (rows.length > 10) {
+            errorMsg = `"${title}": Maximal 10 Varianten pro Box erlaubt.`;
             return;
         }
 
@@ -1733,31 +1749,34 @@ function saveAsHTML() {
     };
 
     // ── 2. Sauberes HTML-Skelett erzeugen ───────────────────
-    // Dynamisch erzeugte Inhalte temporär leeren, damit outerHTML
-    // keine doppelten Eingabefelder oder Ergebnis-Panels enthält.
+    // Dynamisch erzeugte Inhalte temporär leeren (synchron, kein Race-Condition-Risiko),
+    // damit outerHTML keine doppelten Eingabefelder oder Ergebnis-Panels enthält.
     const analysisBoxesEl = document.getElementById('analysis-boxes');
     const resultsEl       = document.getElementById('results');
     const savedBoxes      = analysisBoxesEl.innerHTML;
     const savedResults    = resultsEl.innerHTML;
     const savedSnapshot   = document.body.dataset.snapshot || '';
 
-    analysisBoxesEl.innerHTML = '';
-    resultsEl.innerHTML       = '';
-    delete document.body.dataset.snapshot;
-
-    // ── 3. Snapshot einbetten ───────────────────────────────
-    const payload = JSON.stringify({ snapshot, settings });
-    document.body.dataset.snapshot = payload;
-
-    const html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-
-    // DOM wiederherstellen (Benutzer sieht nichts davon)
-    analysisBoxesEl.innerHTML  = savedBoxes;
-    resultsEl.innerHTML        = savedResults;
-    if (savedSnapshot) {
-        document.body.dataset.snapshot = savedSnapshot;
-    } else {
+    let html;
+    try {
+        analysisBoxesEl.innerHTML = '';
+        resultsEl.innerHTML       = '';
         delete document.body.dataset.snapshot;
+
+        // ── 3. Snapshot einbetten ───────────────────────────────
+        const payload = JSON.stringify({ snapshot, settings });
+        document.body.dataset.snapshot = payload;
+
+        html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+    } finally {
+        // DOM immer wiederherstellen – auch bei unerwarteten Fehlern
+        analysisBoxesEl.innerHTML = savedBoxes;
+        resultsEl.innerHTML       = savedResults;
+        if (savedSnapshot) {
+            document.body.dataset.snapshot = savedSnapshot;
+        } else {
+            delete document.body.dataset.snapshot;
+        }
     }
 
     // ── 4. Download triggern ────────────────────────────────
@@ -2086,7 +2105,8 @@ async function runTest() {
         renderResults(lastResults);
 
     } catch (err) {
-        showAlert('Fehler bei der Berechnung: ' + err.message);
+        // err.message nur als Text anzeigen – nicht via innerHTML
+        showAlert('Fehler bei der Berechnung: ' + String(err.message || err).slice(0, 200));
         console.error(err);
     } finally {
         document.getElementById('spinner').classList.remove('active');
@@ -2242,7 +2262,6 @@ function renderAnalysisInto(container, stats, posteriors, threshold, ciLevel) {
 function renderSummaryMetrics(container, stats) {
     const panel = createPanel();
 
-    // Überschrift mit Tooltip
     panel.innerHTML = `
         <div class="section-title">
             Übersicht
@@ -2256,27 +2275,44 @@ function renderSummaryMetrics(container, stats) {
 
     const grid = panel.querySelector('#metricCards');
 
-    stats.forEach((s, i) => {
-        const upliftHtml = s.uplift !== null
-            ? `<div class="metric-sub">${formatUplift(s.uplift)} vs. Control</div>`
-            : `<div class="metric-sub">Baseline</div>`;
-
+    stats.forEach((s) => {
         const card = document.createElement('div');
         card.className = 'metric-card';
-        card.innerHTML = `
-            <div class="metric-label" style="color:${s.color};">
-                ${escapeHTML(s.label)}
-            </div>
-            <div class="metric-value">${(s.rate * 100).toFixed(2)}%</div>
-            <div class="metric-sub">${s.c.toLocaleString()} / ${s.n.toLocaleString()} Conversions</div>
-            ${upliftHtml}
-        `;
+
+        // Label – Nutzer-String → nur via textContent
+        const labelEl = document.createElement('div');
+        labelEl.className = 'metric-label';
+        labelEl.style.color = s.color;       // s.color kommt aus VARIANT_COLORS (hardcoded)
+        labelEl.textContent = s.label;        // kein innerHTML, kein escapeHTML nötig
+
+        // Rate
+        const valueEl = document.createElement('div');
+        valueEl.className = 'metric-value';
+        valueEl.textContent = `${(s.rate * 100).toFixed(2)}%`;
+
+        // Conversions / Besucher
+        const subEl = document.createElement('div');
+        subEl.className = 'metric-sub';
+        subEl.textContent = `${s.c.toLocaleString()} / ${s.n.toLocaleString()} Conversions`;
+
+        // Uplift
+        const upliftEl = document.createElement('div');
+        upliftEl.className = 'metric-sub';
+        if (s.uplift !== null) {
+            upliftEl.innerHTML = `${formatUplift(s.uplift)} vs. Control`; // formatUplift produziert nur Zahlen+CSS-Klassen, kein Nutzer-Input
+        } else {
+            upliftEl.textContent = 'Baseline';
+        }
+
+        card.appendChild(labelEl);
+        card.appendChild(valueEl);
+        card.appendChild(subEl);
+        card.appendChild(upliftEl);
         grid.appendChild(card);
     });
 
-    // CSV-Export-Button
     const exportBtn = document.createElement('button');
-    exportBtn.className = 'btn btn-ghost';
+    exportBtn.className   = 'btn btn-ghost';
     exportBtn.style.cssText = 'margin-top:20px; font-size:13px;';
     exportBtn.textContent = '⬇ Ergebnisse als CSV';
     exportBtn.onclick     = exportCSV;
@@ -2407,49 +2443,64 @@ function renderProbabilities(container, stats, threshold) {
         const entry = document.createElement('div');
         entry.className = 'ci-entry';
 
+        const inner = document.createElement('div');
+        inner.style.width = '100%';
+
+        const topRow = document.createElement('div');
+        topRow.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;';
+
+        const badge = document.createElement('span');
+        badge.className = 'variant-badge';
+        badge.style.background = hexToRgba(s.color, 0.10);
+        badge.style.color = s.color;
+        badge.textContent = s.label;   // textContent: sicher
+
+        const barWrap = document.createElement('div');
+        barWrap.className = 'prob-bar-wrap';
+        const bar = document.createElement('div');
+        bar.className = 'prob-bar';
+        bar.style.background = s.color;
+        barWrap.appendChild(bar);
+
+        const subRow = document.createElement('div');
+        subRow.style.cssText = 'margin-top:5px; font-size:12px; color:var(--text-muted);';
+
         if (i === 0) {
-            // Control-Platzhalter – gleiche Höhe wie Variantenzeile
-            entry.style.cssText = 'opacity:0.45;';
-            entry.innerHTML = `
-                <div style="width:100%;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span class="variant-badge" style="background:${hexToRgba(s.color,0.10)};color:${s.color};">
-                            ${escapeHTML(s.label)}
-                        </span>
-                        <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--text-muted);">Baseline</span>
-                    </div>
-                    <div class="prob-bar-wrap">
-                        <div class="prob-bar" style="width:0%; background:${s.color};"></div>
-                    </div>
-                    <div style="margin-top:5px; font-size:12px; color:var(--text-muted);">–</div>
-                </div>
-            `;
+            entry.style.opacity = '0.45';
+            const baselineLabel = document.createElement('span');
+            baselineLabel.style.cssText = "font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--text-muted);";
+            baselineLabel.textContent = 'Baseline';
+            topRow.appendChild(badge);
+            topRow.appendChild(baselineLabel);
+            bar.style.width = '0%';
+            subRow.textContent = '–';
         } else {
             const pct   = (s.probVsControl * 100).toFixed(1);
             const isWin = s.probVsControl >= threshold;
-            entry.innerHTML = `
-                <div style="width:100%;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span class="variant-badge" style="background:${hexToRgba(s.color,0.10)};color:${s.color};">
-                            ${escapeHTML(s.label)}
-                        </span>
-                        <span style="font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:14px; color:${isWin ? 'var(--success)' : 'var(--text-primary)'};">
-                            ${pct}%${isWin ? ' ✓' : ''}
-                        </span>
-                    </div>
-                    <div class="prob-bar-wrap">
-                        <div class="prob-bar" style="width:${pct}%; background:${s.color};"></div>
-                    </div>
-                    <div style="margin-top:5px; font-size:12px; color:var(--text-muted);">
-                        Uplift: ${formatUplift(s.uplift)}
-                    </div>
-                </div>
-            `;
+            const valEl = document.createElement('span');
+            valEl.style.cssText = `font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:14px; color:${isWin ? 'var(--success)' : 'var(--text-primary)'};`;
+            valEl.textContent = `${pct}%${isWin ? ' ✓' : ''}`;
+            topRow.appendChild(badge);
+            topRow.appendChild(valEl);
+            bar.style.width = `${pct}%`;
+            subRow.textContent = 'Uplift: ';
+            const upliftSpan = document.createElement('span');
+            upliftSpan.innerHTML = formatUplift(s.uplift); // only toFixed numbers + CSS class
+            subRow.appendChild(upliftSpan);
         }
+
+        inner.appendChild(topRow);
+        inner.appendChild(barWrap);
+        inner.appendChild(subRow);
+        entry.appendChild(inner);
         basePanel.appendChild(entry);
     });
 
-    basePanel.innerHTML += `<div class="small-text">Direkter Vergleich jeder Variante mit Control. Unabhängig von anderen Varianten.</div>`;
+    // Footer-Texte via DOM, kein innerHTML +=
+    const baseFooter = document.createElement('div');
+    baseFooter.className = 'small-text';
+    baseFooter.textContent = 'Direkter Vergleich jeder Variante mit Control. Unabhängig von anderen Varianten.';
+    basePanel.appendChild(baseFooter);
 
     // --- Rechts: Probability to be Best ---
     const bestPanel = createPanel('result-panel');
@@ -2469,26 +2520,48 @@ function renderProbabilities(container, stats, threshold) {
 
         const entry = document.createElement('div');
         entry.className = 'ci-entry';
-        entry.innerHTML = `
-            <div style="width:100%;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                    <span class="variant-badge" style="background:${hexToRgba(s.color,0.10)};color:${s.color};">
-                        ${escapeHTML(s.label)}
-                    </span>
-                    <span style="font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:14px; color:${isAboveThreshold ? 'var(--success)' : 'var(--text-primary)'};">
-                        ${pct}%${isAboveThreshold ? ' ✓' : ''}
-                    </span>
-                </div>
-                <div class="prob-bar-wrap">
-                    <div class="prob-bar" style="width:${pct}%; background:${s.color};"></div>
-                </div>
-                <div style="margin-top:5px; font-size:12px; color:var(--text-muted);">&nbsp;</div>
-            </div>
-        `;
+
+        const inner = document.createElement('div');
+        inner.style.width = '100%';
+
+        const topRow = document.createElement('div');
+        topRow.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;';
+
+        const badge = document.createElement('span');
+        badge.className = 'variant-badge';
+        badge.style.background = hexToRgba(s.color, 0.10);
+        badge.style.color = s.color;
+        badge.textContent = s.label;
+
+        const valEl = document.createElement('span');
+        valEl.style.cssText = `font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:14px; color:${isAboveThreshold ? 'var(--success)' : 'var(--text-primary)'};`;
+        valEl.textContent = `${pct}%${isAboveThreshold ? ' ✓' : ''}`;
+
+        topRow.appendChild(badge);
+        topRow.appendChild(valEl);
+
+        const barWrap = document.createElement('div');
+        barWrap.className = 'prob-bar-wrap';
+        const bar = document.createElement('div');
+        bar.className = 'prob-bar';
+        bar.style.cssText = `width:${pct}%; background:${s.color};`;
+        barWrap.appendChild(bar);
+
+        const spacer = document.createElement('div');
+        spacer.style.cssText = 'margin-top:5px; font-size:12px; color:var(--text-muted);';
+        spacer.innerHTML = '&nbsp;';
+
+        inner.appendChild(topRow);
+        inner.appendChild(barWrap);
+        inner.appendChild(spacer);
+        entry.appendChild(inner);
         bestPanel.appendChild(entry);
     });
 
-    bestPanel.innerHTML += `<div class="small-text">Entscheidungsgrenze: ${(threshold*100).toFixed(0)}% – Varianten mit ✓ sind statistisch aussagekräftig.</div>`;
+    const bestFooter = document.createElement('div');
+    bestFooter.className = 'small-text';
+    bestFooter.textContent = `Entscheidungsgrenze: ${(threshold*100).toFixed(0)}% – Varianten mit ✓ sind statistisch aussagekräftig.`;
+    bestPanel.appendChild(bestFooter);
 
     wrapper.appendChild(basePanel);
     wrapper.appendChild(bestPanel);
@@ -2517,40 +2590,48 @@ function renderCredibleIntervals(container, stats, ciLevel) {
     stats.forEach((s) => {
         const entry = document.createElement('div');
         entry.className = 'ci-entry';
-        entry.innerHTML = `
-            <div class="ci-left">
-                <span class="variant-badge" style="background:${hexToRgba(s.color,0.12)};color:${s.color};">
-                    ${escapeHTML(s.label)}
-                </span>
-            </div>
-            <div class="ci-values">
-                <div class="ci-stat">
-                    <div class="ci-stat-label">Untergrenze</div>
-                    <div class="ci-stat-value">${(s.hdiLower * 100).toFixed(2)}%</div>
-                </div>
-                <div class="ci-stat">
-                    <div class="ci-stat-label">Median</div>
-                    <div class="ci-stat-value">${(s.median * 100).toFixed(2)}%</div>
-                </div>
-                <div class="ci-stat">
-                    <div class="ci-stat-label">Obergrenze</div>
-                    <div class="ci-stat-value">${(s.hdiUpper * 100).toFixed(2)}%</div>
-                </div>
-                <div class="ci-stat">
-                    <div class="ci-stat-label">Breite</div>
-                    <div class="ci-stat-value">${((s.hdiUpper - s.hdiLower) * 100).toFixed(2)}pp</div>
-                </div>
-            </div>
-        `;
+
+        // Linke Seite: Badge
+        const leftEl = document.createElement('div');
+        leftEl.className = 'ci-left';
+        const badge = document.createElement('span');
+        badge.className = 'variant-badge';
+        badge.style.background = hexToRgba(s.color, 0.12);
+        badge.style.color = s.color;
+        badge.textContent = s.label;
+        leftEl.appendChild(badge);
+
+        // Rechte Seite: Werte-Grid
+        const valuesEl = document.createElement('div');
+        valuesEl.className = 'ci-values';
+        [
+            ['Untergrenze', `${(s.hdiLower * 100).toFixed(2)}%`],
+            ['Median',      `${(s.median   * 100).toFixed(2)}%`],
+            ['Obergrenze',  `${(s.hdiUpper * 100).toFixed(2)}%`],
+            ['Breite',      `${((s.hdiUpper - s.hdiLower) * 100).toFixed(2)}pp`]
+        ].forEach(([lbl, val]) => {
+            const stat = document.createElement('div');
+            stat.className = 'ci-stat';
+            const statLbl = document.createElement('div');
+            statLbl.className = 'ci-stat-label';
+            statLbl.textContent = lbl;
+            const statVal = document.createElement('div');
+            statVal.className = 'ci-stat-value';
+            statVal.textContent = val;
+            stat.appendChild(statLbl);
+            stat.appendChild(statVal);
+            valuesEl.appendChild(stat);
+        });
+
+        entry.appendChild(leftEl);
+        entry.appendChild(valuesEl);
         panel.appendChild(entry);
     });
 
-    panel.innerHTML += `
-        <div class="small-text">
-            <b>Breite des HDI:</b> Ein schmales Intervall (wenige Prozentpunkte) bedeutet hohe Sicherheit über die wahre CR.
-            Ein breites Intervall signalisiert, dass mehr Daten benötigt werden.
-        </div>
-    `;
+    const ciFooter = document.createElement('div');
+    ciFooter.className = 'small-text';
+    ciFooter.innerHTML = '<b>Breite des HDI:</b> Ein schmales Intervall (wenige Prozentpunkte) bedeutet hohe Sicherheit über die wahre CR. Ein breites Intervall signalisiert, dass mehr Daten benötigt werden.';
+    panel.appendChild(ciFooter);
     container.appendChild(panel);
 }
 
@@ -2586,27 +2667,37 @@ function renderExpectedLoss(container, stats) {
         const entry = document.createElement('div');
         entry.className = 'ci-entry';
         entry.style.cssText = bg;
-        entry.innerHTML = `
-            <div class="ci-left">
-                <span class="variant-badge" style="background:${hexToRgba(s.color,0.12)};color:${s.color};">
-                    ${escapeHTML(s.label)}
-                </span>
-                ${isBest ? '<span style="font-size:12px;color:var(--success);font-weight:600;">Niedrigster Loss ✓</span>' : ''}
-            </div>
-            <div style="font-family:\'Fira Code\',monospace; font-weight:600; font-size:16px;">
-                ${lossPct}%
-            </div>
-        `;
+
+        // Linke Seite: Badge + optionaler "Niedrigster Loss"-Hinweis
+        const leftEl = document.createElement('div');
+        leftEl.className = 'ci-left';
+
+        const badge = document.createElement('span');
+        badge.className = 'variant-badge';
+        badge.style.background = hexToRgba(s.color, 0.12);
+        badge.style.color = s.color;
+        badge.textContent = s.label;          // textContent: kein XSS möglich
+        leftEl.appendChild(badge);
+
+        if (isBest) {
+            const bestTag = document.createElement('span');
+            bestTag.style.cssText = 'font-size:12px;color:var(--success);font-weight:600;';
+            bestTag.textContent = 'Niedrigster Loss ✓';
+            leftEl.appendChild(bestTag);
+        }
+
+        const lossValueEl = document.createElement('div');
+        lossValueEl.style.cssText = "font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:16px;";
+        lossValueEl.textContent = `${lossPct}%`;
+        entry.appendChild(leftEl);
+        entry.appendChild(lossValueEl);
         panel.appendChild(entry);
     });
 
-    panel.innerHTML += `
-        <div class="small-text">
-            <b>Expected Loss</b> berücksichtigt sowohl die Wahrscheinlichkeit einer Fehlentscheidung als auch deren Ausmaß.
-            Er ist damit robuster als reine Gewinnwahrscheinlichkeiten.
-            Ein Wert nahe 0% bedeutet, dass selbst im Fehlerfall kaum Performance verloren geht.
-        </div>
-    `;
+    const lossFooter = document.createElement('div');
+    lossFooter.className = 'small-text';
+    lossFooter.innerHTML = '<b>Expected Loss</b> berücksichtigt sowohl die Wahrscheinlichkeit einer Fehlentscheidung als auch deren Ausmaß. Er ist damit robuster als reine Gewinnwahrscheinlichkeiten. Ein Wert nahe 0% bedeutet, dass selbst im Fehlerfall kaum Performance verloren geht.';
+    panel.appendChild(lossFooter);
     container.appendChild(panel);
 }
 
@@ -2629,59 +2720,100 @@ function renderDecision(container, stats, threshold) {
     const winnerIdx   = stats.findIndex(s => s.probBest === maxProbBest);
     const winner      = stats[winnerIdx];
     const minLoss     = Math.min(...stats.map(s => s.loss));
-    const safeLabel   = escapeHTML(winner.label);
     const threshPct   = (threshold * 100).toFixed(0);
     const probPct     = (maxProbBest * 100).toFixed(1);
     const lossPct     = (minLoss * 100).toFixed(3);
 
-    let type, icon, title, body;
+    let type, icon, titlePrefix, bodyParts;
 
     if (maxProbBest >= threshold) {
-        // Klare Entscheidung – Schwelle überschritten
-        type  = 'success';
-        icon  = '✅';
-        title = `Empfehlung: ${safeLabel} einführen`;
-        body  = `
-            <b>${safeLabel}</b> hat eine Gewinnwahrscheinlichkeit von
-            <b>${probPct}%</b> und überschreitet damit die Entscheidungsgrenze von ${threshPct}%.<br><br>
-            Expected Loss: <b>${lossPct}%</b>${minLoss < 0.0005
-                ? ' – vernachlässigbar.'
-                : ' – bitte einschätzen, ob dieser Wert für Ihren Anwendungsfall akzeptabel ist.'
-            }<br><br>
-            Relativer Uplift vs. Control:
-            <b>${winner.uplift !== null ? formatUplift(winner.uplift) : 'ist Control'}</b>
-        `;
+        type        = 'success';
+        icon        = '✅';
+        titlePrefix = 'Empfehlung: ';
+        titleSuffix = ' einführen';
+        bodyParts   = [
+            { tag: 'b',    text: winner.label },
+            { tag: null,   text: ` hat eine Gewinnwahrscheinlichkeit von ` },
+            { tag: 'b',    text: `${probPct}%` },
+            { tag: null,   text: ` und überschreitet damit die Entscheidungsgrenze von ${threshPct}%.` },
+            { tag: 'br2' },
+            { tag: null,   text: `Expected Loss: ` },
+            { tag: 'b',    text: `${lossPct}%` },
+            { tag: null,   text: minLoss < 0.0005 ? ' – vernachlässigbar.' : ' – bitte einschätzen, ob dieser Wert akzeptabel ist.' },
+            { tag: 'br2' },
+            { tag: null,   text: 'Relativer Uplift vs. Control: ' },
+            { tag: 'uplift', value: winner.uplift }
+        ];
     } else if (maxProbBest >= 0.75) {
-        // Tendenz erkennbar, Schwelle noch nicht erreicht
-        type  = 'warning';
-        icon  = '⏳';
-        title = `Tendenz: ${safeLabel} führt – Test fortsetzen`;
-        body  = `
-            <b>${safeLabel}</b> liegt vorne mit <b>${probPct}%</b> Gewinnwahrscheinlichkeit,
-            hat aber die Entscheidungsgrenze von ${threshPct}% noch nicht erreicht
-            (Differenz: ${(threshold * 100 - maxProbBest * 100).toFixed(1)} Prozentpunkte).<br><br>
-            Expected Loss: <b>${lossPct}%</b><br><br>
-            Empfehlung: Weitere Daten sammeln.
-        `;
+        type        = 'warning';
+        icon        = '⏳';
+        titlePrefix = 'Tendenz: ';
+        titleSuffix = ' führt – Test fortsetzen';
+        bodyParts   = [
+            { tag: 'b',   text: winner.label },
+            { tag: null,  text: ` liegt vorne mit ` },
+            { tag: 'b',   text: `${probPct}%` },
+            { tag: null,  text: ` Gewinnwahrscheinlichkeit, hat aber die Entscheidungsgrenze von ${threshPct}% noch nicht erreicht (Differenz: ${(threshold * 100 - maxProbBest * 100).toFixed(1)} Prozentpunkte).` },
+            { tag: 'br2' },
+            { tag: null,  text: 'Expected Loss: ' },
+            { tag: 'b',   text: `${lossPct}%` },
+            { tag: 'br2' },
+            { tag: null,  text: 'Empfehlung: Weitere Daten sammeln.' }
+        ];
     } else {
-        // Keine Aussage möglich
-        type  = 'danger';
-        icon  = '🔍';
-        title = 'Keine klare Entscheidung möglich';
-        body  = `
-            Keine Variante überschreitet die Entscheidungsgrenze von ${threshPct}%.
-            Die höchste Gewinnwahrscheinlichkeit liegt bei ${probPct}%.<br><br>
-            Expected Loss: <b>${lossPct}%</b><br><br>
-            Empfehlung: Mehr Daten sammeln oder den Test neu aufsetzen.
-        `;
+        type        = 'danger';
+        icon        = '🔍';
+        titlePrefix = '';
+        titleSuffix = '';
+        bodyParts   = [
+            { tag: null,  text: `Keine Variante überschreitet die Entscheidungsgrenze von ${threshPct}%. Die höchste Gewinnwahrscheinlichkeit liegt bei ${probPct}%.` },
+            { tag: 'br2' },
+            { tag: null,  text: 'Expected Loss: ' },
+            { tag: 'b',   text: `${lossPct}%` },
+            { tag: 'br2' },
+            { tag: null,  text: 'Empfehlung: Mehr Daten sammeln oder den Test neu aufsetzen.' }
+        ];
     }
 
     const box = document.createElement('div');
     box.className = `decision-box ${type} result-panel`;
-    box.innerHTML = `
-        <div class="decision-title">${icon} ${title}</div>
-        <div style="color:var(--text-secondary); line-height:1.7;">${body}</div>
-    `;
+
+    // Titel – Label via textContent, kein innerHTML
+    const titleEl = document.createElement('div');
+    titleEl.className = 'decision-title';
+    titleEl.appendChild(document.createTextNode(`${icon} ${titlePrefix}`));
+    if (titlePrefix) {
+        const labelSpan = document.createElement('span');
+        labelSpan.textContent = winner.label;
+        titleEl.appendChild(labelSpan);
+        titleEl.appendChild(document.createTextNode(titleSuffix));
+    } else {
+        titleEl.appendChild(document.createTextNode('Keine klare Entscheidung möglich'));
+    }
+
+    // Body – Textknoten und <b>-Tags, kein Nutzer-HTML
+    const bodyEl = document.createElement('div');
+    bodyEl.style.cssText = 'color:var(--text-secondary); line-height:1.7;';
+    bodyParts.forEach(part => {
+        if (part.tag === 'br2') {
+            bodyEl.appendChild(document.createElement('br'));
+            bodyEl.appendChild(document.createElement('br'));
+        } else if (part.tag === 'b') {
+            const b = document.createElement('b');
+            b.textContent = part.text;
+            bodyEl.appendChild(b);
+        } else if (part.tag === 'uplift') {
+            // formatUplift produziert nur toFixed()-Zahlen + CSS-Klassenname, kein Nutzereingabe
+            const span = document.createElement('span');
+            span.innerHTML = formatUplift(part.value);
+            bodyEl.appendChild(span);
+        } else {
+            bodyEl.appendChild(document.createTextNode(part.text));
+        }
+    });
+
+    box.appendChild(titleEl);
+    box.appendChild(bodyEl);
     container.appendChild(box);
 }
 
@@ -2703,6 +2835,13 @@ function exportCSV() {
     const sep = ';';
     const de  = v => String(v).replace('.', ',');
 
+    // RFC 4180: Felder mit Semikolon, Anführungszeichen oder Zeilenumbruch in Anführungszeichen einschließen
+    const csvCell = v => {
+        const s = String(v);
+        return (s.includes(';') || s.includes('"') || s.includes('\n') || s.includes('\r'))
+            ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+
     const headers = [
         'Analyse', 'Variante', 'Besucher', 'Conversions', 'Conversion Rate (%)',
         'Relativer Uplift (%)', 'Prob. to beat Baseline (%)', 'Prob. to be Best (%)',
@@ -2712,8 +2851,8 @@ function exportCSV() {
 
     const sections = boxResults.map(box => {
         const dataRows = box.stats.map(s => [
-            box.title,
-            s.label,
+            csvCell(box.title),
+            csvCell(s.label),
             s.n,
             s.c,
             de((s.rate * 100).toFixed(3)),
@@ -2729,7 +2868,7 @@ function exportCSV() {
     });
 
     const bom = '\uFEFF';
-    const csv = bom + sections.join('\n\n'); // leere Zeile zwischen Boxen
+    const csv = bom + sections.join('\n\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url  = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -2786,6 +2925,8 @@ function createPanel(extraClass = '') {
  * @returns {string}     - z. B. 'rgba(91,108,249,0.12)'
  */
 function hexToRgba(hex, alpha) {
+    // Nur valide 6-stellige Hex-Farben akzeptieren
+    if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return `rgba(0,0,0,${alpha})`;
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
     const b = parseInt(hex.slice(5, 7), 16);
